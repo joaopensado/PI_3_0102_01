@@ -26,6 +26,7 @@ flutter:
   # e quando fizer alterações nessa pagina no terminal: flutter pub get 
     - assets/fundo/
     - assets/audio/
+    - assets/personagens/
 
   fonts:
     - family: PixelifySans

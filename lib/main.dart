@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'tela_inicial.dart';
+import 'arquiteturaOUT.dart';
 
 void main() {
   runApp(MyApp());
@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TelaInicial(), // Agora chamando a tela do outro arquivo
+      home: TelaArquiteturaOUT(), // Agora chamando a tela do outro arquivo
     );
   }
 }
