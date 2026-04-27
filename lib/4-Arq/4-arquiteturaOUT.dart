@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'arquiteturaIN.dart';
+import '4-arquiteturaIN.dart';
 
 class TelaArquiteturaOUT extends StatefulWidget {
   @override

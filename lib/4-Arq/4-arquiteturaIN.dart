@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'arquiteturaOUT.dart';
+import '4-arquiteturaOUT.dart';
 
 // 🧠 MODELO
 class Dialogo {
