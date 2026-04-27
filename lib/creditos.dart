@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class Creditos extends StatelessWidget {  // ← ANTES era TextoScreen
+class Creditos extends StatelessWidget {
   const Creditos({super.key});
 
   @override
@@ -8,47 +8,44 @@ class Creditos extends StatelessWidget {  // ← ANTES era TextoScreen
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Créditos'),  // ← Mudei de "História" para "Créditos"
-        backgroundColor: Colors.black,
+        title: const Text('Créditos'),
+        backgroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: 'CRÉDITOS DO JOGO\n\n',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'CRÉDITOS\n\n',
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                TextSpan(
-                  text: 'Desenvolvido por: João\n\n',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white,
+                  TextSpan(
+                    text: 'Chat GPT para criar imagens;\n',
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                TextSpan(
-                  text: 'Agradecimentos especiais para a equipe!\n\n',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.white70,
+                  TextSpan(
+                    text: 'Dramina IA para pixelar imagens',
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                TextSpan(
-                  text: 'Volte sempre!',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber,
-                  ),
-                ),
-              ],
+                ],
+              ),
+              textAlign: TextAlign.center, // centraliza o texto
             ),
           ),
         ),
