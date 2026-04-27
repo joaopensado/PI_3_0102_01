@@ -1,47 +1,51 @@
 import 'package:flutter/material.dart';
 
-class TextoScreen extends StatelessWidget {
-  const TextoScreen({super.key});
+class Creditos extends StatelessWidget {
+  const Creditos({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('História'),
-        backgroundColor: Colors.black,
+        title: const Text('Créditos'),
+        backgroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: 'Era uma vez uma capivara muito sábia...\n\n',
-                  style: TextStyle(
-                    fontSize: 24, // maior
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'CRÉDITOS\n\n',
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                TextSpan(
-                  text:
-                      'Ela vivia na floresta e ajudava todos os animais.\n\n',
-                  style: TextStyle(
-                    fontSize: 18, // médio
-                    color: Colors.white,
+                  TextSpan(
+                    text: 'Chat GPT para criar imagens;\n',
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                TextSpan(
-                  text: 'Um dia, algo inesperado aconteceu...',
-                  style: TextStyle(
-                    fontSize: 16, // menor
-                    fontStyle: FontStyle.italic,
-                    color: Colors.white70,
+                  TextSpan(
+                    text: 'Dramina IA para pixelar imagens',
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              textAlign: TextAlign.center, // centraliza o texto
             ),
           ),
         ),
