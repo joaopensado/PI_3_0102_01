@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-class TextoScreen extends StatelessWidget {
-  const TextoScreen({super.key});
+class Creditos extends StatelessWidget {  // ← ANTES era TextoScreen
+  const Creditos({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('História'),
+        title: const Text('Créditos'),  // ← Mudei de "História" para "Créditos"
         backgroundColor: Colors.black,
       ),
       body: Padding(
@@ -18,27 +18,34 @@ class TextoScreen extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: 'Era uma vez uma capivara muito sábia...\n\n',
+                  text: 'CRÉDITOS DO JOGO\n\n',
                   style: TextStyle(
-                    fontSize: 24, // maior
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
                 TextSpan(
-                  text:
-                      'Ela vivia na floresta e ajudava todos os animais.\n\n',
+                  text: 'Desenvolvido por: João\n\n',
                   style: TextStyle(
-                    fontSize: 18, // médio
+                    fontSize: 18,
                     color: Colors.white,
                   ),
                 ),
                 TextSpan(
-                  text: 'Um dia, algo inesperado aconteceu...',
+                  text: 'Agradecimentos especiais para a equipe!\n\n',
                   style: TextStyle(
-                    fontSize: 16, // menor
+                    fontSize: 16,
                     fontStyle: FontStyle.italic,
                     color: Colors.white70,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Volte sempre!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber,
                   ),
                 ),
               ],

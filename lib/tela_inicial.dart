@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'creditos.dart';
+import 'tela_h15.dart';
 
-// ================= TELA INICIAL =================
 class TelaInicial extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-
-          // FUNDO
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -18,70 +15,47 @@ class TelaInicial extends StatelessWidget {
               ),
             ),
           ),
-
-          // LEVE ESCURECIMENTO (pra destacar texto)
           Container(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.3),
           ),
-
-          // CONTEÚDO CENTRAL
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-
-                //TÍTULO
                 Text(
                   "ARQUIVO\nCAPIVARA",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 42,
+                    fontSize: 48,
                     color: Colors.white,
                     fontFamily: 'PixelifySans',
-                    height: 1.3,
+                    height: 1.2,
                     shadows: [
-                      Shadow(
-                        color: Colors.black,
-                        blurRadius: 6,
-                        offset: Offset(3, 3),
-                      )
+                      Shadow(color: Colors.black, blurRadius: 8, offset: Offset(4, 4)),
+                      Shadow(color: Colors.cyan, blurRadius: 15, offset: Offset(0, 0)),
                     ],
                   ),
                 ),
-
-                SizedBox(height: 50),
-
-                // BOTÕES
-                PixelButton(
-                  text: "NOVO JOGO",
-                  onTap: () {
-                    print("Novo jogo");
-                  },
-                ),
-
+                SizedBox(height: 60),
+                _buildBotaoPixel("NOVO JOGO", () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TelaH15()),
+                  );
+                }, false),
                 SizedBox(height: 20),
-
-                PixelButton(
-                  text: "CONTINUAR",
-                  onTap: () {
-                    print("Continuar");
-                  },
-                ),
-
+                _buildBotaoPixel("CONTINUAR", () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Funcionalidade em desenvolvimento!'), backgroundColor: Colors.orange),
+                  );
+                }, false),
                 SizedBox(height: 15),
-
-                PixelButton(
-                    text: "CRÉDITOS",
-                    small: true,
-                    onTap: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const Creditos(),
-                            ),
-                        );
-                    },
-                ),
+                _buildBotaoPixel("CRÉDITOS", () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Creditos()),
+                  );
+                }, true),
               ],
             ),
           ),
@@ -89,67 +63,88 @@ class TelaInicial extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildBotaoPixel(String texto, VoidCallback onTap, bool pequeno) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: pequeno ? 10 : 18,
+          horizontal: pequeno ? 25 : 55,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.blue[900],
+          border: Border.all(color: Colors.white, width: 3),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [BoxShadow(color: Colors.black, offset: Offset(5, 5))],
+        ),
+        child: Text(
+          texto,
+          style: TextStyle(
+            fontSize: pequeno ? 14 : 18,
+            color: Colors.white,
+            fontFamily: 'PixelifySans',
+            letterSpacing: 2,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-// ================= BOTÃO =================
-class PixelButton extends StatefulWidget {
-  final String text;
-  final bool small;
-  final VoidCallback onTap;
-
-  PixelButton({
-    required this.text,
-    required this.onTap,
-    this.small = false,
-  });
-
-  @override
-  _PixelButtonState createState() => _PixelButtonState();
-}
-
-// Estetica do botao
-class _PixelButtonState extends State<PixelButton> {
-  bool isPressed = false;
+class Creditos extends StatelessWidget {
+  const Creditos({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) {
-        setState(() => isPressed = true);
-      },
-      onTapUp: (_) {
-        setState(() => isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () {
-        setState(() => isPressed = false);
-      },
-      child: AnimatedContainer(
-        duration: Duration(milliseconds: 100),
-        padding: EdgeInsets.symmetric(
-          vertical: widget.small ? 8 : 16,
-          horizontal: widget.small ? 20 : 50,
-        ),
-        decoration: BoxDecoration(
-          color: isPressed ? Colors.blue[700] : Colors.blue[900],
-          border: Border.all(color: Colors.white, width: 3),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: isPressed
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black,
-                    offset: Offset(4, 4),
-                  )
-                ],
-        ),
-        child: Text(
-          widget.text,
-          style: TextStyle(
-            fontSize: widget.small ? 12 : 16,
-            color: Colors.white,
-            fontFamily: 'PixelifySans',
-          ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text('CRÉDITOS', style: TextStyle(fontFamily: 'PixelifySans', fontSize: 18)),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Spacer(),
+            Text(
+              'ARQUIVO CAPIVARA',
+              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 28, color: Colors.cyanAccent),
+            ),
+            SizedBox(height: 40),
+            Text(
+              'DESENVOLVIDO POR:',
+              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 16, color: Colors.white70),
+            ),
+            SizedBox(height: 15),
+            Text(
+              'Ana Clara Coelho Chaves\nBrenda Maia Bergamasco\nCaio Cantarin\nJoão Pedro Rocha\nJoão Victor Pensado',
+              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 14, color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 40),
+            Text(
+              'PUC-Campinas - 2026',
+              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 12, color: Colors.white54),
+            ),
+            Spacer(),
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),
+                decoration: BoxDecoration(
+                  color: Colors.blue[900],
+                  border: Border.all(color: Colors.white, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('VOLTAR', style: TextStyle(fontFamily: 'PixelifySans', color: Colors.white)),
+              ),
+            ),
+            SizedBox(height: 30),
+          ],
         ),
       ),
     );

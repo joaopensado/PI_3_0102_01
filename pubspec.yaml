@@ -12,6 +12,8 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  video_player: ^2.8.6
+  audioplayers: ^6.0.0  # ← mantendo audioplayers
 
 dev_dependencies:
   flutter_test:
@@ -22,10 +24,13 @@ flutter:
   uses-material-design: true
 
   assets:
- 
-  # e quando fizer alterações nessa pagina no terminal: flutter pub get 
-    - assets/fundo/
-    - assets/audio/
+    - assets/fundo/fundo.png
+    - assets/fundo/fundo-H15.jpeg
+    - assets/personagens/Pingo.jpeg
+    - assets/videos/videoPingo.mp4
+    - assets/videos/videoPingoEsperando.mp4
+    - assets/audio/typingText.ogg
+    - assets/audio/musicaPingo.ogg
 
   fonts:
     - family: PixelifySans

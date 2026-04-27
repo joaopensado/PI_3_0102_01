@@ -9,10 +9,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Arquivo Capivara',
       debugShowCheckedModeBanner: false,
-      home: TelaInicial(), // Agora chamando a tela do outro arquivo
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: Colors.blue[900],
+        fontFamily: 'monospace',
+      ),
+      home: TelaInicial(),
     );
   }
 }
-
-
