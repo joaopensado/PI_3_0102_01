@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'tela_inicial.dart';
-import 'arquiteturaOUT.dart';
+import '4-Arq/4-arquiteturaOUT.dart';
 
 void main() {
   runApp(MyApp());

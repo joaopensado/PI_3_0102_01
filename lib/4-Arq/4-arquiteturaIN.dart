@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'arquiteturaOUT.dart';
+import '4-arquiteturaOUT.dart';
 
 // 🧠 MODELO DE DIÁLOGO
 class Dialogo {
