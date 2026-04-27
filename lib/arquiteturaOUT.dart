@@ -25,12 +25,16 @@ class _TelaArquiteturaOUTState extends State<TelaArquiteturaOUT> {
   }
 
   void toggleSom() async {
-    setState(() {
-      isMuted = !isMuted;
-    });
+  setState(() {
+    isMuted = !isMuted;
+  });
 
-    await _player.setVolume(isMuted ? 0 : 1);
+  if (isMuted) {
+    await _player.pause();
+  } else {
+    await _player.resume();
   }
+}
 
   @override
   void dispose() {
@@ -38,11 +42,25 @@ class _TelaArquiteturaOUTState extends State<TelaArquiteturaOUT> {
     super.dispose();
   }
 
-  // 🗣️ LISTA DE FALAS
-  List<String> dialogos = [
-    "O jogador chega no prédio de arquitetura...",
-    "'Ao caminhar pelos corredores, ouve ao fundo um resmungo vindo de uma das salas.'",
-    "'Quando encontra a sala de onde vem os barulho, ele decide entrar.'",
+  List<Dialogo> dialogos = [
+
+    Dialogo(
+      texto: "O jogador chega no prédio de arquitetura...",
+      personagem: "narrador",
+      imagem: "",
+    ),
+
+    Dialogo(
+      texto: "Ao caminhar pelos corredores, ouve ao fundo um resmungo vindo de uma das salas.",
+      personagem: "narrador",
+      imagem: "",
+    ),
+
+    Dialogo(
+      texto: "Quando encontra a sala de onde vem os barulho, ele decide entrar.",
+      personagem: "narrador",
+      imagem: "",
+    ),
   ];
 
   int indiceAtual = 0;

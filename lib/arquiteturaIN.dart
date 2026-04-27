@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'arquiteturaOUT.dart';
 
-// 🧠 MODELO DE DIÁLOGO
+// 🧠 MODELO
 class Dialogo {
   final String texto;
   final String personagem;
@@ -22,7 +23,7 @@ class TelaArquiteturaIN extends StatefulWidget {
 
 class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
 
-  // 🎵 PLAYER
+  // 🎵 AUDIO
   final AudioPlayer _player = AudioPlayer();
   bool isMuted = false;
 
@@ -30,6 +31,7 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
   void initState() {
     super.initState();
     tocarSom();
+    iniciarDigitacao();
   }
 
   void tocarSom() async {
@@ -38,16 +40,21 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
   }
 
   void toggleSom() async {
-    setState(() {
-      isMuted = !isMuted;
-    });
+  setState(() {
+    isMuted = !isMuted;
+  });
 
-    await _player.setVolume(isMuted ? 0 : 1);
+  if (isMuted) {
+    await _player.pause();
+  } else {
+    await _player.resume();
   }
+}
 
   @override
   void dispose() {
     _player.dispose();
+    timer?.cancel();
     super.dispose();
   }
 
@@ -82,11 +89,47 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
 
   int indiceAtual = 0;
 
+  // 🔥 TYPEWRITER
+  String textoAtual = "";
+  int charIndex = 0;
+  Timer? timer;
+
+  void iniciarDigitacao() {
+    timer?.cancel();
+    textoAtual = "";
+    charIndex = 0;
+
+    String fullText = dialogos[indiceAtual].texto;
+
+    timer = Timer.periodic(Duration(milliseconds: 30), (t) {
+      if (charIndex < fullText.length) {
+        setState(() {
+          textoAtual += fullText[charIndex];
+          charIndex++;
+        });
+      } else {
+        t.cancel();
+      }
+    });
+  }
+
   void proximoDialogo() {
+    String fullText = dialogos[indiceAtual].texto;
+
+    // 👉 se ainda está digitando, completa direto
+    if (textoAtual.length < fullText.length) {
+      setState(() {
+        textoAtual = fullText;
+      });
+      return;
+    }
+
+    // 👉 vai pro próximo diálogo
     if (indiceAtual < dialogos.length - 1) {
       setState(() {
         indiceAtual++;
       });
+      iniciarDigitacao();
     }
   }
 
@@ -120,19 +163,17 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
                     : Alignment.bottomRight,
                 child: Padding(
                   padding: EdgeInsets.only(
-                    bottom: 120,
-                    left: atual.personagem == "jogador" ? 20 : 0,
-                    right: atual.personagem == "Koda" ? 20 : 0,
+                    bottom: 80,
                   ),
                   child: Image.asset(
                     atual.imagem,
-                    height: 260,
-                    fit: BoxFit.contain,
+                    height: 380,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
 
-            // 🔈 BOTÃO DE SOM
+            // 🔈 BOTÃO SOM
             Positioned(
               top: 40,
               right: 20,
@@ -140,50 +181,78 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
                 icon: Icon(
                   isMuted ? Icons.volume_off : Icons.volume_up,
                   color: Colors.white,
-                  size: 30,
                 ),
                 onPressed: toggleSom,
               ),
             ),
 
-            // 💬 CAIXA DE DIÁLOGO
+            // 💬 CAIXA ESTILO RPG
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-                margin: EdgeInsets.all(20),
-                padding: EdgeInsets.all(16),
+                width: double.infinity,
+                margin: EdgeInsets.all(16),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.75),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.black.withOpacity(0.9),
+                  border: Border.all(color: Colors.white, width: 2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
 
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
+                    // NOME
+                    if (atual.personagem != "narrador")
+                      Text(
+                        atual.personagem,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                    SizedBox(height: 6),
+
+                    // TEXTO COM EFEITO
                     Text(
-                      atual.texto,
-                      textAlign: TextAlign.center,
+                      textoAtual,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
+                        height: 1.4,
                       ),
                     ),
 
                     SizedBox(height: 10),
 
-                    if (acabouDialogo)
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TelaArquiteturaOUT(),
-                            ),
-                          );
-                        },
-                        child: Text("Começar desafio"),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+
+                        if (acabouDialogo)
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TelaArquiteturaOUT(),
+                                ),
+                              );
+                            },
+                            child: Text("Começar desafio"),
+                          ),
+
+                        if (!acabouDialogo)
+                          Text(
+                            "▼",
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
