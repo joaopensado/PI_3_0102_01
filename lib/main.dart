@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.blue[900],
         fontFamily: 'monospace',
       ),
-      home: TelaInicial(),
+      home: TelaArquiteturaOUT(),
     );
   }
 }

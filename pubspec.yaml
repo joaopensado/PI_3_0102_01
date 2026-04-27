@@ -26,11 +26,16 @@ flutter:
   assets:
     - assets/fundo/fundo.png
     - assets/fundo/fundo-H15.jpeg
+    - assets/fundo/arq-outside-pxl.png
+    - assets/fundo/sala-arq-pxl.png
     - assets/personagens/Pingo.jpeg
+    - assets/personagens/koda.png
+    - assets/personagens/player-masc.png
     - assets/videos/videoPingo.mp4
     - assets/videos/videoPingoEsperando.mp4
     - assets/audio/typingText.ogg
     - assets/audio/musicaPingo.ogg
+    - assets/audio/background_music_arq.mp3
 
   fonts:
     - family: PixelifySans

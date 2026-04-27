@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'arquiteturaOUT.dart';
 
 // 🧠 MODELO DE DIÁLOGO
@@ -20,6 +21,37 @@ class TelaArquiteturaIN extends StatefulWidget {
 }
 
 class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
+
+  // 🎵 PLAYER
+  final AudioPlayer _player = AudioPlayer();
+  bool isMuted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    tocarSom();
+  }
+
+  void tocarSom() async {
+    await _player.setReleaseMode(ReleaseMode.loop);
+    await _player.play(AssetSource('audio/background_music_arq.mp3'));
+  }
+
+  void toggleSom() async {
+    setState(() {
+      isMuted = !isMuted;
+    });
+
+    await _player.setVolume(isMuted ? 0 : 1);
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  // ---------------- DIÁLOGO ----------------
 
   List<Dialogo> dialogos = [
 
@@ -80,7 +112,7 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
               ),
             ),
 
-            // 👤 PERSONAGEM NO CENÁRIO
+            // 👤 PERSONAGEM
             if (atual.personagem != "narrador")
               Align(
                 alignment: atual.personagem == "Koda"
@@ -88,17 +120,31 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
                     : Alignment.bottomRight,
                 child: Padding(
                   padding: EdgeInsets.only(
-                    bottom: 20, // sobe acima da caixa
-                    right: atual.personagem == "coala" ? 20 : 0,
+                    bottom: 120,
                     left: atual.personagem == "jogador" ? 20 : 0,
+                    right: atual.personagem == "Koda" ? 20 : 0,
                   ),
                   child: Image.asset(
                     atual.imagem,
-                    height: 260, // 👈 aumentei pra ficar mais destaque
+                    height: 260,
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
+
+            // 🔈 BOTÃO DE SOM
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: Icon(
+                  isMuted ? Icons.volume_off : Icons.volume_up,
+                  color: Colors.white,
+                  size: 30,
+                ),
+                onPressed: toggleSom,
+              ),
+            ),
 
             // 💬 CAIXA DE DIÁLOGO
             Align(
@@ -115,7 +161,6 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
 
-                    // TEXTO
                     Text(
                       atual.texto,
                       textAlign: TextAlign.center,
@@ -127,7 +172,6 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
 
                     SizedBox(height: 10),
 
-                    // BOTÃO FINAL
                     if (acabouDialogo)
                       ElevatedButton(
                         onPressed: () {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'arquiteturaIN.dart';
 
 class TelaArquiteturaOUT extends StatefulWidget {
@@ -7,6 +8,35 @@ class TelaArquiteturaOUT extends StatefulWidget {
 }
 
 class _TelaArquiteturaOUTState extends State<TelaArquiteturaOUT> {
+
+  // 🎵 PLAYER
+  final AudioPlayer _player = AudioPlayer();
+  bool isMuted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    tocarSom();
+  }
+
+  void tocarSom() async {
+    await _player.setReleaseMode(ReleaseMode.loop);
+    await _player.play(AssetSource('audio/background_music_arq.mp3'));
+  }
+
+  void toggleSom() async {
+    setState(() {
+      isMuted = !isMuted;
+    });
+
+    await _player.setVolume(isMuted ? 0 : 1);
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
 
   // 🗣️ LISTA DE FALAS
   List<String> dialogos = [
@@ -48,6 +78,19 @@ class _TelaArquiteturaOUTState extends State<TelaArquiteturaOUT> {
               ),
             ),
 
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: Icon(
+                  isMuted ? Icons.volume_off : Icons.volume_up,
+                  color: Colors.white,
+                  size: 30,
+                ),
+                onPressed: toggleSom,
+              ),
+            ),
+            
             // 💬 CAIXA DE DIÁLOGO
             Align(
               alignment: Alignment.bottomCenter,
