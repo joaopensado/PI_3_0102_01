@@ -64,7 +64,7 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
     Dialogo(
       texto: "Ah! Ei, você! Que bom que apareceu... preciso de ajuda...",
       personagem: "Koda",
-      imagem: "assets/personagens/koda.png",
+      imagem: "",
     ),
 
     Dialogo(
@@ -76,7 +76,7 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
     Dialogo(
       texto: "Estou com problemas nesse projeto arquitetônico...",
       personagem: "Koda",
-      imagem: "assets/personagens/koda.png",
+      imagem: "",
     ),
   ];
 
