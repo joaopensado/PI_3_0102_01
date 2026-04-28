@@ -91,9 +91,16 @@ class TelaInicial extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
 
-                _buildBotaoPixel("H15 TECNOLOGIA", () {
+                _buildBotaoPixel("TESTAR NOVO JOGO", () { 
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/mapa');
+                }, true),
+
+                SizedBox(height: 10),
+
+                _buildBotaoPixel("H15 TECNOLOGIA", () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/h15');
                 }, true),
 
                 SizedBox(height: 10),
