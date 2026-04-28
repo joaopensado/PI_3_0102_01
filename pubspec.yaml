@@ -38,6 +38,7 @@ flutter:
     - assets/audio/background_music_arq.mp3
     - assets/fundo/pracaalimentacao.jpg
     - assets/personagens/ratatoni.png
+    - assets/audio/sompraca.mp3
 
   fonts:
     - family: PixelifySans
