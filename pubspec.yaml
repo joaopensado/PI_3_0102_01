@@ -36,6 +36,8 @@ flutter:
     - assets/audio/typingText.ogg
     - assets/audio/musicaPingo.ogg
     - assets/audio/background_music_arq.mp3
+    - assets/fundo/pracaalimentacao.jpg
+    - assets/personagens/ratatoni.png
 
   fonts:
     - family: PixelifySans

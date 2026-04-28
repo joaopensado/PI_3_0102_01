@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'tela_inicial.dart';
 import 'arquiteturaOUT.dart';
+import 'pracaalimentacao.dart';
 
 void main() {
   runApp(MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.blue[900],
         fontFamily: 'monospace',
       ),
-      home: TelaArquiteturaOUT(),
+      home: Telapracaalimentacao(),
     );
   }
 }
