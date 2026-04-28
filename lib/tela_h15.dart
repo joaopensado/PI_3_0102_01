@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'dart:html' as html;
 
 class TelaH15 extends StatefulWidget {
   @override
@@ -17,7 +20,6 @@ class _TelaH15State extends State<TelaH15> {
   bool _audioInicializado = false;
   bool _usandoVideoEspera = false;
   
-  // Variáveis para o efeito de digitação
   String _textoExibido = '';
   String _textoCompleto = '';
   int _indiceChar = 0;
@@ -27,6 +29,8 @@ class _TelaH15State extends State<TelaH15> {
   bool missaoAceita = false;
   bool dialogoFinalizado = false;
   String opcaoEscolhida = '';
+  
+  bool _mapaAberto = false;
 
   @override
   void initState() {
@@ -36,12 +40,10 @@ class _TelaH15State extends State<TelaH15> {
   }
 
   void _inicializarVideos() async {
-    // Vídeo principal (falando)
     _videoController = VideoPlayerController.asset('assets/videos/videoPingo.mp4');
     await _videoController.initialize();
     _videoController.setLooping(true);
     
-    // Vídeo de espera (quando não está falando)
     _videoEsperaController = VideoPlayerController.asset('assets/videos/videoPingoEsperando.mp4');
     await _videoEsperaController.initialize();
     _videoEsperaController.setLooping(true);
@@ -54,25 +56,24 @@ class _TelaH15State extends State<TelaH15> {
     _mostrarVideoEspera();
   }
 
-void _inicializarAudios() async {
-  try {
-    _musicPlayer = AudioPlayer();
-    
-    await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-    await _musicPlayer.setVolume(0.5);
-
-    await _musicPlayer.play(
-      AssetSource('audio/musicaPingo.mp3'),
-    );
-
-    print('✅ Áudios carregados com sucesso!');
-    setState(() {
-      _audioInicializado = true;
-    });
-  } catch (e) {
-    print('❌ Erro ao carregar áudios: $e');
+  void _inicializarAudios() async {
+    try {
+      _musicPlayer = AudioPlayer();
+      
+      await _musicPlayer.play(AssetSource('audio/musicaPingo.mp3'));
+      await _musicPlayer.setVolume(0.5);
+      await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+      
+      await _musicPlayer.resume();
+      
+      print('✅ Áudios carregados com sucesso!');
+      setState(() {
+        _audioInicializado = true;
+      });
+    } catch (e) {
+      print('❌ Erro ao carregar áudios: $e');
+    }
   }
-}
 
   void _mostrarVideoFalando() {
     if (_videoInicializado) {
@@ -110,10 +111,9 @@ void _inicializarAudios() async {
 
   void _proximoCaractere() {
     if (_indiceChar < _textoCompleto.length) {
-      if (_indiceChar % 2 == 0 && 
-    _textoCompleto[_indiceChar] != ' ' && 
-    _textoCompleto[_indiceChar] != '\n') {
-}
+      if (_textoCompleto[_indiceChar] != ' ' && 
+          _textoCompleto[_indiceChar] != '\n') {
+      }
       
       setState(() {
         _textoExibido += _textoCompleto[_indiceChar];
@@ -124,7 +124,6 @@ void _inicializarAudios() async {
         if (mounted) _proximoCaractere();
       });
     } else {
-      // Terminou de digitar - volta para vídeo de espera
       setState(() {
         _digitando = false;
       });
@@ -141,7 +140,6 @@ void _inicializarAudios() async {
       });
       _mostrarVideoEspera();
     } else {
-      // Avança para próximo diálogo
       setState(() {
         if (etapaDialogo == 0) {
           etapaDialogo = 1;
@@ -170,6 +168,142 @@ void _inicializarAudios() async {
     }
   }
 
+  // ================= GEO LOCALIZAÇÃO =================
+  Future<void> _abrirMapa() async {
+    if (_mapaAberto) return;
+    _mapaAberto = true;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Obtendo localização...'), duration: Duration(seconds: 1)),
+    );
+    
+    double latitude = -22.834084781581872;
+    double longitude = -47.052650679667536;
+    
+    try {
+      final geoPosition = await html.window.navigator.geolocation.getCurrentPosition();
+      final coords = geoPosition.coords;
+      if (coords != null) {
+        if (coords.latitude != null) {
+          latitude = coords.latitude!.toDouble();
+        }
+        if (coords.longitude != null) {
+          longitude = coords.longitude!.toDouble();
+        }
+      }
+      print('📍 Localização obtida: $latitude, $longitude');
+    } catch (e) {
+      print('Erro ao obter localização: $e');
+      
+      if (!mounted) {
+        _mapaAberto = false;
+        return;
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Usando coordenada padrão: PUC Campinas - H15'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+
+    if (!mounted) {
+      _mapaAberto = false;
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: Colors.cyanAccent, width: 2),
+        ),
+        child: Container(
+          height: 450,
+          width: 350,
+          padding: EdgeInsets.all(10),
+          child: Column(
+            children: [
+              Text(
+                'LOCALIZAÇÃO - H15',
+                style: TextStyle(
+                  fontFamily: 'PixelifySans',
+                  color: Colors.cyanAccent,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 10),
+              Expanded(
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: LatLng(latitude, longitude),
+                    initialZoom: 16,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.app',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: LatLng(latitude, longitude),
+                          width: 40,
+                          height: 40,
+                          child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+                        ),
+                        Marker(
+                          point: LatLng(-22.834084781581872, -47.052650679667536),
+                          width: 40,
+                          height: 40,
+                          child: Icon(Icons.location_on, color: Colors.cyanAccent, size: 30),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                '📍 VERMELHO: Sua localização | CIANO: Prédio H15',
+                style: TextStyle(fontFamily: 'PixelifySans', fontSize: 9, color: Colors.white54),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 10),
+              GestureDetector(
+                onTap: () {
+                  _mapaAberto = false;
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[900],
+                    border: Border.all(color: Colors.white, width: 2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'FECHAR',
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) {
+      _mapaAberto = false;
+    });
+  }
+
   @override
   void dispose() {
     _videoController.dispose();
@@ -195,17 +329,47 @@ void _inicializarAudios() async {
           Container(color: Colors.black.withOpacity(0.4)),
           ..._buildPixelDecorations(),
 
-          // VÍDEO DO PINGO - COM BoxFit.cover
+          // Botão do MAPA
+          Positioned(
+            top: 50,
+            right: 20,
+            child: GestureDetector(
+              onTap: _abrirMapa,
+              child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1a1f3a),
+                  border: Border.all(color: Colors.cyanAccent, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.map, color: Colors.cyanAccent, size: 18),
+                    SizedBox(width: 6),
+                    Text('MAPA',
+                      style: TextStyle(
+                        fontFamily: 'PixelifySans',
+                        fontSize: 12,
+                        color: Colors.cyanAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // VÍDEO DO PINGO
           Positioned(
             left: 20,
-            bottom: 120,
+            bottom: 0,
             child: Column(
               children: [
                 MouseRegion(
                   cursor: SystemMouseCursors.basic,
                   child: Container(
                     width: 180,
-                    height: 180,
+                    height: 170,
                     decoration: BoxDecoration(
                       color: Color(0xFF1a1f3a),
                       border: Border.all(color: Colors.cyanAccent, width: 4),
@@ -217,19 +381,41 @@ void _inicializarAudios() async {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: _videoInicializado && _videoEsperaInicializado
-                          ? FittedBox(
-                              fit: BoxFit.cover, // COVER - zoom para preencher tudo
-                              child: SizedBox(
-                                width: _usandoVideoEspera 
-                                    ? _videoEsperaController.value.size.width
-                                    : _videoController.value.size.width,
-                                height: _usandoVideoEspera
-                                    ? _videoEsperaController.value.size.height
-                                    : _videoController.value.size.height,
-                                child: _usandoVideoEspera
-                                    ? VideoPlayer(_videoEsperaController)
-                                    : VideoPlayer(_videoController),
-                              ),
+                          ? Stack(
+                              children: [
+                                ClipRRect(
+  borderRadius: BorderRadius.circular(8),
+  child: SizedBox(
+    width: 180,
+    height: 180,
+    child: OverflowBox(
+      maxWidth: double.infinity,
+      maxHeight: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: 300,
+          height: 300,
+          child: _usandoVideoEspera
+              ? VideoPlayer(_videoEsperaController)
+              : VideoPlayer(_videoController),
+        ),
+      ),
+    ),
+  ),
+),
+                                // Overlay para bloquear controles do vídeo
+                                Positioned.fill(
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {},
+                                      splashColor: Colors.transparent,
+                                      highlightColor: Colors.transparent,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             )
                           : Container(
                               color: Color(0xFF0a0e27),
@@ -433,9 +619,7 @@ void _inicializarAudios() async {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildBotaoAcao('IR PARA BIBLIOTECA', () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Próximo: Biblioteca com Corujito!'), backgroundColor: Colors.purple),
-                        );
+                        Navigator.pushNamed(context, '/biblioteca');
                       }),
                       _buildBotaoAcao('EXPLORAR H15', () {
                         ScaffoldMessenger.of(context).showSnackBar(

@@ -14,6 +14,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   video_player: ^2.8.6
   audioplayers: ^6.0.0
+  geolocator: ^12.0.0
+  flutter_map: ^7.0.0
+  latlong2: ^0.9.0
+  permission_handler: ^11.3.0
 
 dev_dependencies:
   flutter_test:
