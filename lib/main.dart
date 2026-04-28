@@ -3,6 +3,8 @@ import 'tela_inicial.dart';
 import 'tela_h15.dart';
 import 'arquiteturaOUT.dart';
 import 'tela_mapa_exploracao.dart';
+import 'entradaManacas.dart';
+import 'pracaalimentacao.dart';
 
 void main() {
   runApp(MyApp());
@@ -25,8 +27,8 @@ class MyApp extends StatelessWidget {
         '/mapa': (context) => TelaMapaExploracao(),
         '/h12': (context) => TelaArquiteturaOUT(),
         '/biblioteca': (context) => TelaH15(),
-        '/refeitorio': (context) => TelaH15(),
-        '/manacas': (context) => TelaH15(),
+        '/refeitorio': (context) => Telapracaalimentacao(),
+        '/manacas': (context) => EntradaScreen(),
       },
     );
   }
