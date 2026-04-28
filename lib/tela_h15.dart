@@ -11,7 +11,6 @@ class _TelaH15State extends State<TelaH15> {
   late VideoPlayerController _videoController;
   late VideoPlayerController _videoEsperaController;
   late AudioPlayer _musicPlayer;
-  late AudioPlayer _typingSound;
   
   bool _videoInicializado = false;
   bool _videoEsperaInicializado = false;
@@ -52,24 +51,20 @@ class _TelaH15State extends State<TelaH15> {
       _videoEsperaInicializado = true;
     });
     
-    // Começa com o vídeo de espera
     _mostrarVideoEspera();
   }
 
 void _inicializarAudios() async {
   try {
     _musicPlayer = AudioPlayer();
-    _typingSound = AudioPlayer();
     
-    await _musicPlayer.setSourceAsset('assets/audio/musicaPingo.mp3');
-    await _musicPlayer.setVolume(0.5);
     await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-    
-    await _typingSound.setSourceAsset('assets/audio/typingText.mp3');
-    await _typingSound.setVolume(0.3);
-    
-    await _musicPlayer.resume();
-    
+    await _musicPlayer.setVolume(0.5);
+
+    await _musicPlayer.play(
+      AssetSource('audio/musicaPingo.mp3'),
+    );
+
     print('✅ Áudios carregados com sucesso!');
     setState(() {
       _audioInicializado = true;
@@ -100,21 +95,7 @@ void _inicializarAudios() async {
     }
   }
 
-  void _tocarSomDigitacao() {
-    if (_audioInicializado) {
-      _typingSound.stop();
-      _typingSound.resume();
-    }
-  }
-
-  void _pararSomDigitacao() {
-    if (_audioInicializado) {
-      _typingSound.stop();
-    }
-  }
-
   void _iniciarDigitacao(String novoTexto) {
-    // Troca para o vídeo de fala
     _mostrarVideoFalando();
     
     setState(() {
@@ -129,11 +110,10 @@ void _inicializarAudios() async {
 
   void _proximoCaractere() {
     if (_indiceChar < _textoCompleto.length) {
-      // Toca som de digitação (exceto espaços e pontuação)
-      if (_textoCompleto[_indiceChar] != ' ' && 
-          _textoCompleto[_indiceChar] != '\n') {
-        _tocarSomDigitacao();
-      }
+      if (_indiceChar % 2 == 0 && 
+    _textoCompleto[_indiceChar] != ' ' && 
+    _textoCompleto[_indiceChar] != '\n') {
+}
       
       setState(() {
         _textoExibido += _textoCompleto[_indiceChar];
@@ -148,20 +128,17 @@ void _inicializarAudios() async {
       setState(() {
         _digitando = false;
       });
-      _pararSomDigitacao();
       _mostrarVideoEspera();
     }
   }
 
   void _avancarDialogo() {
     if (_digitando) {
-      // Pula animação: mostra texto completo e volta para vídeo de espera
       setState(() {
         _textoExibido = _textoCompleto;
         _indiceChar = _textoCompleto.length;
         _digitando = false;
       });
-      _pararSomDigitacao();
       _mostrarVideoEspera();
     } else {
       // Avança para próximo diálogo
@@ -198,7 +175,6 @@ void _inicializarAudios() async {
     _videoController.dispose();
     _videoEsperaController.dispose();
     _musicPlayer.dispose();
-    _typingSound.dispose();
     super.dispose();
   }
 

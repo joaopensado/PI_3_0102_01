@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'tela_h15.dart';
+import 'arquiteturaOUT.dart';
+import 'creditos.dart';
 
 class TelaInicial extends StatelessWidget {
   @override
@@ -37,12 +39,11 @@ class TelaInicial extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 60),
+
                 _buildBotaoPixel("NOVO JOGO", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => TelaH15()),
-                  );
+                  _mostrarEscolhaLocal(context);
                 }, false),
+
                 SizedBox(height: 20),
                 _buildBotaoPixel("CONTINUAR", () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -61,6 +62,86 @@ class TelaInicial extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _mostrarEscolhaLocal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: Colors.white, width: 3),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "ESCOLHA O LOCAL",
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 18,
+                    color: Colors.cyanAccent,
+                    letterSpacing: 2,
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                _buildBotaoPixel("H15 TECNOLOGIA", () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/h15');
+                }, true),
+
+                SizedBox(height: 10),
+
+                _buildBotaoPixel("BIBLIOTECA", () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/biblioteca');
+                }, true),
+
+                SizedBox(height: 10),
+
+                _buildBotaoPixel("PRAÇA", () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/refeitorio');
+                }, true),
+
+                SizedBox(height: 10),
+
+                _buildBotaoPixel("H12 ARQUITETURA", () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/h12');
+                }, true),
+
+                SizedBox(height: 10),
+
+                _buildBotaoPixel("MANACÁS (CAVE)", () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/manacas');
+                }, true),
+
+                SizedBox(height: 15),
+
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Text(
+                    "CANCELAR",
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -86,65 +167,6 @@ class TelaInicial extends StatelessWidget {
             fontFamily: 'PixelifySans',
             letterSpacing: 2,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class Creditos extends StatelessWidget {
-  const Creditos({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text('CRÉDITOS', style: TextStyle(fontFamily: 'PixelifySans', fontSize: 18)),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Spacer(),
-            Text(
-              'ARQUIVO CAPIVARA',
-              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 28, color: Colors.cyanAccent),
-            ),
-            SizedBox(height: 40),
-            Text(
-              'DESENVOLVIDO POR:',
-              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 16, color: Colors.white70),
-            ),
-            SizedBox(height: 15),
-            Text(
-              'Ana Clara Coelho Chaves\nBrenda Maia Bergamasco\nCaio Cantarin\nJoão Pedro Rocha\nJoão Victor Pensado',
-              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 14, color: Colors.white),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 40),
-            Text(
-              'PUC-Campinas - 2026',
-              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 12, color: Colors.white54),
-            ),
-            Spacer(),
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),
-                decoration: BoxDecoration(
-                  color: Colors.blue[900],
-                  border: Border.all(color: Colors.white, width: 2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text('VOLTAR', style: TextStyle(fontFamily: 'PixelifySans', color: Colors.white)),
-              ),
-            ),
-            SizedBox(height: 30),
-          ],
         ),
       ),
     );

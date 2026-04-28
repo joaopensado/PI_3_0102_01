@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'tela_inicial.dart';
+import 'tela_h15.dart';
 import 'arquiteturaOUT.dart';
 
 void main() {
@@ -17,7 +18,14 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.blue[900],
         fontFamily: 'monospace',
       ),
-      home: TelaArquiteturaOUT(),
+      home: TelaInicial(),
+      routes: {
+        '/h15': (context) => TelaH15(),
+        '/h12': (context) => TelaArquiteturaOUT(),
+        '/biblioteca': (context) => TelaH15(),
+        '/refeitorio': (context) => TelaH15(),
+        '/manacas': (context) => TelaH15(),
+      },
     );
   }
 }
