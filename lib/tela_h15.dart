@@ -32,6 +32,13 @@ class _TelaH15State extends State<TelaH15> {
   
   bool _mapaAberto = false;
 
+  MapController _mapController = MapController();
+
+double _userLat = -22.834084781581872;
+double _userLng = -47.052650679667536;
+
+final LatLng _h15 = LatLng(-22.834084781581872, -47.052650679667536);
+
   @override
   void initState() {
     super.initState();
@@ -168,141 +175,178 @@ class _TelaH15State extends State<TelaH15> {
     }
   }
 
-  // ================= GEO LOCALIZAÇÃO =================
-  Future<void> _abrirMapa() async {
-    if (_mapaAberto) return;
-    _mapaAberto = true;
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Obtendo localização...'), duration: Duration(seconds: 1)),
-    );
-    
-    double latitude = -22.834084781581872;
-    double longitude = -47.052650679667536;
-    
-    try {
-      final geoPosition = await html.window.navigator.geolocation.getCurrentPosition();
-      final coords = geoPosition.coords;
-      if (coords != null) {
-        if (coords.latitude != null) {
-          latitude = coords.latitude!.toDouble();
-        }
-        if (coords.longitude != null) {
-          longitude = coords.longitude!.toDouble();
-        }
-      }
-      print('📍 Localização obtida: $latitude, $longitude');
-    } catch (e) {
-      print('Erro ao obter localização: $e');
-      
-      if (!mounted) {
-        _mapaAberto = false;
-        return;
-      }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Usando coordenada padrão: PUC Campinas - H15'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+  double _calcularDistancia() {
+  return Distance().as(
+    LengthUnit.Meter,
+    LatLng(_userLat, _userLng),
+    _h15,
+  );
+}
 
-    if (!mounted) {
-      _mapaAberto = false;
+Future<void> _pegarLocalizacao() async {
+  try {
+    final geo = html.window.navigator.geolocation;
+
+    if (geo == null) {
+      print('❌ Geolocation não disponível');
       return;
     }
-    
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: Colors.cyanAccent, width: 2),
-        ),
-        child: Container(
-          height: 450,
-          width: 350,
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Text(
-                'LOCALIZAÇÃO - H15',
-                style: TextStyle(
-                  fontFamily: 'PixelifySans',
-                  color: Colors.cyanAccent,
-                  fontSize: 14,
-                ),
+
+    final pos = await geo.getCurrentPosition(
+      enableHighAccuracy: true,
+      timeout: Duration(milliseconds: 10000), // ✅ CORREÇÃO AQUI
+    );
+
+    setState(() {
+      _userLat = pos.coords?.latitude?.toDouble() ?? _userLat;
+      _userLng = pos.coords?.longitude?.toDouble() ?? _userLng;
+    });
+
+    _mapController.move(
+  LatLng(_userLat, _userLng),
+  17,
+);
+
+    print('📍 SUA LOCALIZAÇÃO: $_userLat, $_userLng');
+
+  } catch (e) {
+    print('❌ ERRO GEO: $e');
+  }
+}
+
+  // ================= GEO LOCALIZAÇÃO =================
+Future<void> _abrirMapa() async {
+  if (_mapaAberto) return;
+  _mapaAberto = true;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Obtendo localização...')),
+  );
+
+  await _pegarLocalizacao();
+
+  if (!mounted) return;
+
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      backgroundColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: Colors.cyanAccent, width: 2),
+      ),
+      child: Container(
+        height: 500,
+        width: 350,
+        padding: EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Text(
+              'MAPA - SUA LOCALIZAÇÃO',
+              style: TextStyle(
+                fontFamily: 'PixelifySans',
+                color: Colors.cyanAccent,
               ),
-              SizedBox(height: 10),
-              Expanded(
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: LatLng(latitude, longitude),
-                    initialZoom: 16,
+            ),
+
+            SizedBox(height: 10),
+
+            Expanded(
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: LatLng(_userLat, _userLng),
+                  initialZoom: 17,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.app',
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.app',
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: LatLng(latitude, longitude),
-                          width: 40,
-                          height: 40,
-                          child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+
+                  MarkerLayer(
+                    markers: [
+                      // 📍 SUA LOCALIZAÇÃO
+                      Marker(
+                        point: LatLng(_userLat, _userLng),
+                        width: 40,
+                        height: 40,
+                        child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+                      ),
+
+                      // 🎯 H15
+                      Marker(
+                        point: _h15,
+                        width: 40,
+                        height: 40,
+                        child: Icon(Icons.location_on, color: Colors.cyanAccent, size: 30),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: 10),
+
+            Text(
+              '📍 VERMELHO: Você | CIANO: H15',
+              style: TextStyle(fontSize: 10, color: Colors.white54),
+            ),
+
+            SizedBox(height: 10),
+
+            // 🚀 BOTÕES
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+
+                // 📍 CENTRALIZAR
+                ElevatedButton(
+                  onPressed: () {
+                    _mapController.move(
+                      LatLng(_userLat, _userLng),
+                      17,
+                    );
+                  },
+                  child: Text('MINHA POSIÇÃO'),
+                ),
+
+                // 🎯 VER DISTÂNCIA
+                ElevatedButton(
+                  onPressed: () {
+                    double d = _calcularDistancia();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Distância até H15: ${d.toStringAsFixed(0)}m',
                         ),
-                        Marker(
-                          point: LatLng(-22.834084781581872, -47.052650679667536),
-                          width: 40,
-                          height: 40,
-                          child: Icon(Icons.location_on, color: Colors.cyanAccent, size: 30),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    );
+                  },
+                  child: Text('DISTÂNCIA'),
                 ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                '📍 VERMELHO: Sua localização | CIANO: Prédio H15',
-                style: TextStyle(fontFamily: 'PixelifySans', fontSize: 9, color: Colors.white54),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 10),
-              GestureDetector(
-                onTap: () {
-                  _mapaAberto = false;
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[900],
-                    border: Border.all(color: Colors.white, width: 2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'FECHAR',
-                    style: TextStyle(
-                      fontFamily: 'PixelifySans',
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+              ],
+            ),
+
+            SizedBox(height: 10),
+
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _mapaAberto = false;
+              },
+              child: Text('FECHAR'),
+            ),
+          ],
         ),
       ),
-    ).then((_) {
-      _mapaAberto = false;
-    });
-  }
+    ),
+  ).then((_) {
+    _mapaAberto = false;
+  });
+}
 
   @override
   void dispose() {

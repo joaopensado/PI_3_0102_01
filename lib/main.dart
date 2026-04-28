@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'tela_inicial.dart';
 import 'tela_h15.dart';
 import 'arquiteturaOUT.dart';
+import 'tela_mapa_exploracao.dart';
 
 void main() {
   runApp(MyApp());
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
       home: TelaInicial(),
       routes: {
         '/h15': (context) => TelaH15(),
+        '/mapa': (context) => TelaMapaExploracao(),
         '/h12': (context) => TelaArquiteturaOUT(),
         '/biblioteca': (context) => TelaH15(),
         '/refeitorio': (context) => TelaH15(),
