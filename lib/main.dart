@@ -1,6 +1,7 @@
+import 'package:arquivocapivara_app/5-Manacas/entradaManacas.dart';
 import 'package:flutter/material.dart';
 import 'tela_inicial.dart';
-import '4-Arq/4-arquiteturaOUT.dart';
+//import '4-Arq/4-arquiteturaOUT.dart';
 
 void main() {
   runApp(MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.blue[900],
         fontFamily: 'monospace',
       ),
-      home: TelaInicial(),
+      home: EntradaScreen(),
     );
   }
 }

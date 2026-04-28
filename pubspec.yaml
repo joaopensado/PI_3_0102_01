@@ -31,6 +31,11 @@ flutter:
     - assets/videos/videoPingoEsperando.mp4
     - assets/audio/typingText.ogg
     - assets/audio/musicaPingo.ogg
+    - assets/fundo/corredor_manacas.jpeg
+    - assets/fundo/sala_principal_cap.jpeg
+    - assets/personagens/capivarilda_atacada.png
+    - assets/fundo/entrada_manacas.jpeg
+    - assets/fundo/pegadas.png
 
   fonts:
     - family: PixelifySans
