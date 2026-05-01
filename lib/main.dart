@@ -5,6 +5,7 @@ import 'arquiteturaOUT.dart';
 import 'tela_mapa_exploracao.dart';
 import 'entradaManacas.dart';
 import 'pracaalimentacao.dart';
+import 'biblioteca_fachada.dart';
 
 void main() {
   runApp(MyApp());
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
         '/h15': (context) => TelaH15(),
         '/mapa': (context) => TelaMapaExploracao(),
         '/h12': (context) => TelaArquiteturaOUT(),
-        '/biblioteca': (context) => TelaH15(),
+        '/biblioteca': (context) => BibliotecaFachadaScreen(),
         '/refeitorio': (context) => Telapracaalimentacao(),
         '/manacas': (context) => EntradaScreen(),
       },

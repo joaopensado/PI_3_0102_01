@@ -106,7 +106,7 @@ class _TelaArquiteturaINState extends State<TelaArquiteturaIN> {
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/fundo/sala-arq-pxl.png'),
+                  image: AssetImage('assets/fundo/sala-arq-pxl.jpg'),
                   fit: BoxFit.cover,
                 ),
               ),

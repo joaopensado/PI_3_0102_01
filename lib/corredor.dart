@@ -2,6 +2,27 @@ import 'package:flutter/material.dart';
 import 'salaPrincipal.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+// ========== ÁUDIO GLOBAL COMPARTILHADO ==========
+final AudioPlayer _globalPlayer = AudioPlayer();
+
+Future<void> iniciarMusicaGlobal() async {
+  await _globalPlayer.setReleaseMode(ReleaseMode.loop);
+  await _globalPlayer.play(AssetSource('audio/manacas_background_music.mp3'));
+}
+
+Future<void> pararMusicaGlobal() async {
+  await _globalPlayer.stop();
+}
+
+Future<void> pausarMusicaGlobal() async {
+  await _globalPlayer.pause();
+}
+
+Future<void> retomarMusicaGlobal() async {
+  await _globalPlayer.resume();
+}
+// ================================================
+
 class CorredorScreen extends StatefulWidget {
   const CorredorScreen({super.key});
 
@@ -10,40 +31,22 @@ class CorredorScreen extends StatefulWidget {
 }
 
 class _CorredorScreenState extends State<CorredorScreen> {
-  final AudioPlayer _player = AudioPlayer();
   bool isMuted = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // Não toca automaticamente na web; chama após um gesto
-    // Se for mobile, pode descomentar: tocarSom();
-  }
-
-  Future<void> tocarSom() async {
-    try {
-      await _player.setReleaseMode(ReleaseMode.loop);
-      await _player.play(AssetSource('audio/manacas_background_music.mp3'));
-      print("Áudio tocando");
-    } catch (e) {
-      print("Erro: $e");
-    }
-  }
-
-  Future<void> toggleSom() async {
+  Future<void> toggleMute() async {
     setState(() {
       isMuted = !isMuted;
     });
     if (isMuted) {
-      await _player.pause();
+      await pausarMusicaGlobal();
     } else {
-      await _player.resume();
+      await retomarMusicaGlobal();
     }
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    // Não destrói o player global aqui
     super.dispose();
   }
 
@@ -61,7 +64,7 @@ class _CorredorScreenState extends State<CorredorScreen> {
               ),
             ),
           ),
-          // Botão de áudio (canto superior direito)
+          // Botão de mute (canto superior direito)
           Positioned(
             top: 40,
             right: 20,
@@ -71,19 +74,19 @@ class _CorredorScreenState extends State<CorredorScreen> {
                 color: Colors.white,
                 size: 32,
               ),
-              onPressed: toggleSom,
+              onPressed: toggleMute,
             ),
           ),
-          // Botão para iniciar música (adicional para web)
+          // Botão para iniciar música (caso a web bloqueie autoplay)
           Positioned(
             top: 100,
             right: 20,
             child: ElevatedButton(
-              onPressed: tocarSom,
+              onPressed: iniciarMusicaGlobal,
               child: const Text("Tocar Música"),
             ),
           ),
-          // Pegadas clicáveis
+          // Pegadas para avançar
           Positioned(
             bottom: 80,
             right: 50,
@@ -98,6 +101,24 @@ class _CorredorScreenState extends State<CorredorScreen> {
                 'assets/fundo/pegadas.png',
                 width: 120,
                 height: 80,
+              ),
+            ),
+          ),
+          // Botão "Tela Inicial" - para a música e volta
+          Positioned(
+            top: 20,
+            left: 20,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await pararMusicaGlobal();
+                if (!context.mounted) return;
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+              icon: const Icon(Icons.home),
+              label: const Text("Tela Inicial"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white70,
+                foregroundColor: Colors.black,
               ),
             ),
           ),

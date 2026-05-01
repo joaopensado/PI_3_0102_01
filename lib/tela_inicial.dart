@@ -1,14 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'tela_h15.dart';
 import 'arquiteturaOUT.dart';
 import 'creditos.dart';
 
-class TelaInicial extends StatelessWidget {
+class TelaInicial extends StatefulWidget {
+  @override
+  State<TelaInicial> createState() => _TelaInicialState();
+}
+
+class _TelaInicialState extends State<TelaInicial> {
+
+  int etapa = 0;
+  final AudioPlayer _player = AudioPlayer();
+  bool _mutado = false; // NOVO: controle de mute
+
+  @override
+  void initState() {
+    super.initState();
+    tocarAudio();
+  }
+
+  Future<void> tocarAudio() async {
+    await _player.setVolume(1.0);
+    await _player.setReleaseMode(ReleaseMode.loop);
+    await _player.play(AssetSource('audio/somtelainicial.mp3'));
+  }
+
+  // NOVO: alterna entre mute e unmute
+  Future<void> _alternarMute() async {
+    setState(() {
+      _mutado = !_mutado;
+    });
+    await _player.setVolume(_mutado ? 0.0 : 1.0);
+  }
+
+  // Para o áudio e navega para a rota
+  Future<void> _navegarPara(BuildContext context, String rota) async {
+    await _player.stop();
+    Navigator.pushNamed(context, rota);
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
+
+          // FUNDO
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -17,9 +62,13 @@ class TelaInicial extends StatelessWidget {
               ),
             ),
           ),
+
+          // ESCURECIMENTO
           Container(
             color: Colors.black.withOpacity(0.3),
           ),
+
+          // CONTEÚDO
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -45,12 +94,18 @@ class TelaInicial extends StatelessWidget {
                 }, false),
 
                 SizedBox(height: 20),
+
                 _buildBotaoPixel("CONTINUAR", () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Funcionalidade em desenvolvimento!'), backgroundColor: Colors.orange),
+                    SnackBar(
+                      content: Text('Funcionalidade em desenvolvimento!'),
+                      backgroundColor: Colors.orange
+                    ),
                   );
                 }, false),
+
                 SizedBox(height: 15),
+
                 _buildBotaoPixel("CRÉDITOS", () {
                   Navigator.push(
                     context,
@@ -58,6 +113,29 @@ class TelaInicial extends StatelessWidget {
                   );
                 }, true),
               ],
+            ),
+          ),
+
+          // NOVO: Botão mute/unmute no canto superior direito
+          Positioned(
+            top: 40,
+            right: 20,
+            child: GestureDetector(
+              onTap: _alternarMute,
+              child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue[900],
+                  border: Border.all(color: Colors.white, width: 3),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [BoxShadow(color: Colors.black, offset: Offset(4, 4))],
+                ),
+                child: Icon(
+                  _mutado ? Icons.volume_off : Icons.volume_up,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
             ),
           ),
         ],
@@ -93,42 +171,42 @@ class TelaInicial extends StatelessWidget {
 
                 _buildBotaoPixel("TESTAR NOVO JOGO", () { 
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/mapa');
+                  _navegarPara(context, '/mapa');
                 }, true),
 
                 SizedBox(height: 10),
 
                 _buildBotaoPixel("H15 TECNOLOGIA", () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/h15');
+                  _navegarPara(context, '/h15');
                 }, true),
 
                 SizedBox(height: 10),
 
                 _buildBotaoPixel("BIBLIOTECA", () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/biblioteca');
+                  _navegarPara(context, '/biblioteca');
                 }, true),
 
                 SizedBox(height: 10),
 
                 _buildBotaoPixel("PRAÇA", () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/refeitorio');
+                  _navegarPara(context, '/refeitorio');
                 }, true),
 
                 SizedBox(height: 10),
 
                 _buildBotaoPixel("H12 ARQUITETURA", () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/h12');
+                  _navegarPara(context, '/h12');
                 }, true),
 
                 SizedBox(height: 10),
 
                 _buildBotaoPixel("MANACÁS (CAVE)", () {
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/manacas');
+                  _navegarPara(context, '/manacas');
                 }, true),
 
                 SizedBox(height: 15),

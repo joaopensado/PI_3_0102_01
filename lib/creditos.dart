@@ -57,7 +57,7 @@ class Creditos extends StatelessWidget {
 
               // NOMES DAS IAS 
               Text(
-                'Chat GPT - para gerar imagens\n'
+                'Chat GPT - para gerar imagens e auxílio nos códigos\n'
                 'Dramina IA - para pixelar imagens\n'
                 'Adobe Firefly - para gerar vídeos\n',
                 textAlign: TextAlign.center,

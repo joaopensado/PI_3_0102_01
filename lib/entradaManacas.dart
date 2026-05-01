@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'corredor.dart'; // verifique se o nome do arquivo está correto
+import 'corredor.dart';
 
 class EntradaScreen extends StatelessWidget {
   const EntradaScreen({super.key});
@@ -9,7 +9,6 @@ class EntradaScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Imagem de fundo
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -18,12 +17,18 @@ class EntradaScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Imagem de pegadas clicável
           Positioned(
             bottom: 250,
             right: 930,
             child: GestureDetector(
-              onTap: () {
+              onTap: () async {
+                // Tenta iniciar a música, mas não impede a navegação
+                try {
+                  await iniciarMusicaGlobal();
+                } catch (e) {
+                  print("Erro no áudio: $e");
+                }
+                if (!context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CorredorScreen()),
@@ -33,6 +38,23 @@ class EntradaScreen extends StatelessWidget {
                 'assets/fundo/pegadas.png',
                 width: 300,
                 height: 200,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 20,
+            left: 20,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await pararMusicaGlobal();
+                if (!context.mounted) return;
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+              icon: const Icon(Icons.home),
+              label: const Text("Tela Inicial"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white70,
+                foregroundColor: Colors.black,
               ),
             ),
           ),

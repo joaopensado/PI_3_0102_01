@@ -72,7 +72,7 @@ class _TelaArquiteturaOUTState extends State<TelaArquiteturaOUT> {
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/fundo/arq-outside-pxl.png'),
+                  image: AssetImage('assets/fundo/arq-outside-pxl.jpg'),
                   fit: BoxFit.cover,
                 ),
               ),
