@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:html' as html;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:async';
@@ -14,8 +15,12 @@ class TelaMapaExploracao extends StatefulWidget {
 class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
   final MapController _mapController = MapController();
 
+  Map? save;
+
   double _userLat = -22.834084781581872;
   double _userLng = -47.052650679667536;
+
+  bool _primeiraLocalizacao = true;
 
   double _zoomAtual = 17;
 
@@ -67,10 +72,13 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
           _userLng = lng;
         });
 
-        _mapController.move(
-          LatLng(_userLat, _userLng),
-          _mapController.camera.zoom,
-        );
+        if (_primeiraLocalizacao) {
+          _mapController.move(
+            LatLng(_userLat, _userLng),
+            _mapController.camera.zoom,
+          );
+          _primeiraLocalizacao = false;
+        }
 
         _verificarProximidade();
       }
@@ -120,6 +128,24 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
     }
   }
 
+  Future<void> salvarProgresso() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dados = prefs.getString('saves');
+
+    if (dados == null || save == null) return;
+
+    List saves = jsonDecode(dados);
+
+    for (var s in saves) {
+      if (s['nome'] == save!['nome']) {
+        s['lat'] = _userLat;
+        s['lng'] = _userLng;
+      }
+    }
+
+    await prefs.setString('saves', jsonEncode(saves));
+  }
+
   @override
   void dispose() {
     _geoSubscription?.cancel();
@@ -128,13 +154,19 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 RECEBE DADOS UMA VEZ SÓ
     if (!_dadosCarregados) {
       final args = ModalRoute.of(context)?.settings.arguments as Map?;
 
       if (args != null) {
+        save = args;
+
         _personagem = args['personagem'] ?? _personagem;
         _nome = args['nome'] ?? _nome;
+
+        if (args['lat'] != null && args['lng'] != null) {
+          _userLat = args['lat'];
+          _userLng = args['lng'];
+        }
       }
 
       _dadosCarregados = true;
@@ -293,7 +325,10 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
                   ),
                 );
 
-                if (sair == true) Navigator.pop(context);
+                if (sair == true) {
+                  await salvarProgresso();
+                  Navigator.pop(context);
+                }
               },
               child: _botaoPixelComIcone('VOLTAR', Icons.arrow_back),
             ),

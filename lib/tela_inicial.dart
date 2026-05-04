@@ -4,6 +4,8 @@ import 'tela_h15.dart';
 import 'arquiteturaOUT.dart';
 import 'creditos.dart';
 import 'game_progress.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class TelaInicial extends StatefulWidget {
   @override
@@ -51,6 +53,8 @@ class _TelaInicialState extends State<TelaInicial> {
     final personagem = await _dialogPersonagem(context);
 
     if (personagem == null) return;
+
+    await _salvarJogo(nome, personagem);
 
     await _player.stop();
 
@@ -136,35 +140,383 @@ class _TelaInicialState extends State<TelaInicial> {
                   style: TextStyle(
                     fontFamily: 'PixelifySans',
                     color: Colors.cyanAccent,
+                    fontSize: 16,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                SizedBox(height: 20),
+                SizedBox(
+                  height: 140,
+                  child: GridView.count(
+                    crossAxisCount: 3,
+                    childAspectRatio: 0.8, // 👈 melhora proporção
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    children: [
+                      _itemPersonagem(
+                          context, 'assets/personagens/player-masc1.png'),
+                      _itemPersonagem(
+                          context, 'assets/personagens/player-masc2.png'),
+                      _itemPersonagem(
+                          context, 'assets/personagens/player-fem1.png'),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "Toque para escolher",
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _itemPersonagem(BuildContext context, String path) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        splashColor: Colors.cyanAccent.withOpacity(0.2),
+        onTap: () => Navigator.pop(context, path),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Color(0xFF1A1F3A),
+            border: Border.all(color: Colors.cyanAccent, width: 2),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black,
+                offset: Offset(2, 2),
+              )
+            ],
+          ),
+          padding: EdgeInsets.all(8),
+          child: Center(
+            child: Image.asset(
+              path,
+              height: 100,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _salvarJogo(String nome, String personagem) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final dados = prefs.getString('saves');
+    List saves = [];
+
+    if (dados != null) {
+      saves = jsonDecode(dados);
+    }
+
+    saves.add({
+      'nome': nome,
+      'personagem': personagem,
+      'fase': '/mapa',
+      'lat': null,
+      'lng': null,
+    });
+
+    await prefs.setString('saves', jsonEncode(saves));
+  }
+
+  Future<void> _mostrarSaves(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dados = prefs.getString('saves');
+
+    if (dados == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Nenhum save encontrado')),
+      );
+      return;
+    }
+
+    List saves = jsonDecode(dados);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "SEUS SAVES",
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    color: Colors.cyanAccent,
+                    fontSize: 18,
+                  ),
+                ),
+                SizedBox(height: 20),
+                ...List.generate(saves.length, (index) {
+                  final save = saves[index];
+
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 10),
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.cyanAccent),
+                    ),
+                    child: Row(
+                      children: [
+                        // 👤 PERSONAGEM
+                        Image.asset(
+                          save['personagem'],
+                          width: 40,
+                        ),
+
+                        SizedBox(width: 10),
+
+                        // 📛 NOME
+                        Expanded(
+                          child: Text(
+                            save['nome'],
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'PixelifySans',
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+
+                        // ▶️ JOGAR
+                        _botaoAcao(
+                          icon: Icons.play_arrow,
+                          cor: Colors.blue.shade400,
+                          onTap: () async {
+                            Navigator.pop(context);
+
+                            await _player.stop();
+
+                            Navigator.pushNamed(
+                              this.context,
+                              save['fase'],
+                              arguments: save,
+                            );
+                          },
+                        ),
+
+                        // ✏️ EDITAR
+                        _botaoAcao(
+                          icon: Icons.edit,
+                          cor: Colors.greenAccent,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _editarSave(index, save);
+                          },
+                        ),
+
+                        // 🗑️ DELETAR
+                        _botaoAcao(
+                          icon: Icons.delete,
+                          cor: Colors.cyanAccent,
+                          onTap: () {
+                            _confirmarDeletarSave(index);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Text(
+                    "FECHAR",
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _deletarSave(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dados = prefs.getString('saves');
+
+    if (dados == null) return;
+
+    List saves = jsonDecode(dados);
+
+    saves.removeAt(index);
+
+    await prefs.setString('saves', jsonEncode(saves));
+
+    Navigator.of(context).pop();
+
+    await Future.delayed(Duration(milliseconds: 100));
+
+    _mostrarSaves(context);
+  }
+
+  Future<void> _confirmarDeletarSave(int index) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Color(0xFF0A0E27),
+              border: Border.all(color: Colors.redAccent, width: 3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.warning_amber_rounded,
+                    color: Colors.redAccent, size: 40),
+                SizedBox(height: 10),
+                Text(
+                  "DELETAR SAVE?",
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    color: Colors.redAccent,
+                    fontSize: 16,
                   ),
                 ),
                 SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    // ❌ CANCELAR
                     GestureDetector(
-                      onTap: () => Navigator.pop(
-                          context, 'assets/personagens/player-masc.png'),
-                      child: Image.asset('assets/personagens/player-masc.png',
-                          width: 60),
+                      onTap: () {
+                        print("CANCELAR CLICADO");
+                        Navigator.pop(dialogContext, false);
+                      },
+                      child: _buildBotaoPixel(
+                        "CANCELAR",
+                        () => Navigator.pop(dialogContext, false),
+                        true,
+                      ),
                     ),
+
+                    // 🗑️ CONFIRMAR
                     GestureDetector(
-                      onTap: () => Navigator.pop(
-                          context, 'assets/personagens/player-fem.png'),
-                      child: Image.asset('assets/personagens/player-fem.png',
-                          width: 60),
+                      onTap: () => Navigator.pop(dialogContext, true),
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.red[900],
+                          border: Border.all(color: Colors.redAccent, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          "DELETAR",
+                          style: TextStyle(
+                            fontFamily: 'PixelifySans',
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
-                ),
-                SizedBox(height: 10),
-                Text(
-                  "Toque para escolher",
-                  style: TextStyle(color: Colors.white54, fontSize: 10),
                 ),
               ],
             ),
           ),
         );
+      },
+    );
+
+    if (confirmar == true) {
+      await _deletarSave(index);
+    }
+  }
+
+  Future<void> _editarSave(int index, Map save) async {
+    TextEditingController controller =
+        TextEditingController(text: save['nome']);
+
+    final novoNome = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("EDITAR NOME", style: TextStyle(color: Colors.cyanAccent)),
+                SizedBox(height: 10),
+                TextField(
+                  controller: controller,
+                  style: TextStyle(color: Colors.white),
+                ),
+                SizedBox(height: 10),
+                _buildBotaoPixel(
+                  "SALVAR",
+                  () => Navigator.pop(context, controller.text),
+                  true,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (novoNome == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final dados = prefs.getString('saves');
+
+    List saves = jsonDecode(dados!);
+
+    saves[index]['nome'] = novoNome;
+
+    await prefs.setString('saves', jsonEncode(saves));
+
+    _mostrarSaves(context);
+  }
+
+  Future<void> _continuarJogo(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final nome = prefs.getString('nome');
+    final personagem = prefs.getString('personagem');
+
+    if (nome == null || personagem == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nenhum save encontrado!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    await _player.stop();
+
+    Navigator.pushNamed(
+      context,
+      '/mapa',
+      arguments: {
+        'nome': nome,
+        'personagem': personagem,
       },
     );
   }
@@ -322,11 +674,7 @@ class _TelaInicialState extends State<TelaInicial> {
                 }, false),
                 SizedBox(height: 20),
                 _buildBotaoPixel("CONTINUAR", () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text('Funcionalidade em desenvolvimento!'),
-                        backgroundColor: Colors.orange),
-                  );
+                  _mostrarSaves(context);
                 }, false),
                 SizedBox(height: 15),
                 _buildBotaoPixel("CRÉDITOS", () {
@@ -478,4 +826,30 @@ class _TelaInicialState extends State<TelaInicial> {
       ),
     );
   }
+}
+
+Widget _botaoAcao({
+  required IconData icon,
+  required Color cor,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      margin: EdgeInsets.symmetric(horizontal: 4),
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Color(0xFF1A1F3A),
+        border: Border.all(color: cor, width: 2),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black,
+            offset: Offset(2, 2),
+          )
+        ],
+      ),
+      child: Icon(icon, color: cor, size: 18),
+    ),
+  );
 }
