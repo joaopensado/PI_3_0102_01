@@ -12,7 +12,6 @@ class TelaMapaExploracao extends StatefulWidget {
 }
 
 class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
-
   final MapController _mapController = MapController();
 
   double _userLat = -22.834084781581872;
@@ -24,10 +23,14 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
 
   List<LatLng> _rota = [];
 
-  // 🔥 CONTROLE DA GEOLOCALIZAÇÃO
+  // 🔥 NOVO: dados do jogador
+  String _personagem = 'assets/personagens/player-masc.png';
+  String _nome = 'Jogador';
+  bool _dadosCarregados = false;
+
+  // 🔥 GEOLOCALIZAÇÃO
   StreamSubscription<html.Geoposition>? _geoSubscription;
 
-  // 🔥 TAMANHO DINÂMICO
   double _calcularTamanho(double base) {
     double fator = (20 - _zoomAtual) / 3;
     fator = fator.clamp(0.5, 2.5);
@@ -40,16 +43,17 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
     _iniciarLocalizacaoTempoReal();
   }
 
-  // ================= 📡 LOCALIZAÇÃO TEMPO REAL =================
+  // ================= 📡 LOCALIZAÇÃO =================
   void _iniciarLocalizacaoTempoReal() {
     final geo = html.window.navigator.geolocation;
 
     if (geo == null) return;
 
-    _geoSubscription = geo.watchPosition(
+    _geoSubscription = geo
+        .watchPosition(
       enableHighAccuracy: true,
-    ).listen((event) {
-
+    )
+        .listen((event) {
       if (!mounted) return;
 
       final pos = event as html.Geoposition;
@@ -91,8 +95,7 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
 
   // ================= 🗺️ ROTA =================
   Future<void> _buscarRota() async {
-    final url =
-        'https://router.project-osrm.org/route/v1/foot/'
+    final url = 'https://router.project-osrm.org/route/v1/foot/'
         '$_userLng,$_userLat;${_h15.longitude},${_h15.latitude}'
         '?overview=full&geometries=geojson';
 
@@ -117,28 +120,36 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
     }
   }
 
-  // ================= 🧹 DISPOSE =================
   @override
   void dispose() {
-    _geoSubscription?.cancel(); // 🔥 ESSENCIAL
+    _geoSubscription?.cancel();
     super.dispose();
   }
 
-  // ================= UI =================
   @override
   Widget build(BuildContext context) {
+    // 🔥 RECEBE DADOS UMA VEZ SÓ
+    if (!_dadosCarregados) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map?;
+
+      if (args != null) {
+        _personagem = args['personagem'] ?? _personagem;
+        _nome = args['nome'] ?? _nome;
+      }
+
+      _dadosCarregados = true;
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-
           // 🗺️ MAPA
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: LatLng(_userLat, _userLng),
               initialZoom: 17,
-
               onPositionChanged: (position, hasGesture) {
                 if (!mounted) return;
                 setState(() {
@@ -147,7 +158,6 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
               },
             ),
             children: [
-
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.app',
@@ -168,20 +178,19 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
               // 📍 MARCADORES
               MarkerLayer(
                 markers: [
-
-                  // 📍 JOGADOR
+                  // 👤 JOGADOR
                   Marker(
                     point: LatLng(_userLat, _userLng),
                     width: _calcularTamanho(40),
                     height: _calcularTamanho(40),
                     child: Image.asset(
-                      'assets/personagens/player-masc.png',
+                      _personagem,
                       width: _calcularTamanho(60),
                       height: _calcularTamanho(60),
                     ),
                   ),
 
-                  // 🐧 PINGO
+                  // 🐧 DESTINO
                   Marker(
                     point: _h15,
                     width: _calcularTamanho(60),
@@ -210,6 +219,10 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
               ),
               child: Column(
                 children: [
+                  Text(
+                    '👤 Jogador: $_nome',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   Text(
                     '🐧 Vá até o Pingo para iniciar o jogo!',
                     style: TextStyle(color: Colors.cyanAccent),
@@ -252,7 +265,6 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-
                           Text(
                             'SAIR DO JOGO?',
                             style: TextStyle(
@@ -260,18 +272,15 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
                               color: Colors.cyanAccent,
                             ),
                           ),
-
                           SizedBox(height: 20),
-
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-
                               GestureDetector(
                                 onTap: () => Navigator.pop(context, false),
-                                child: _botaoPixel('CANCELAR', Colors.cyanAccent),
+                                child:
+                                    _botaoPixel('CANCELAR', Colors.cyanAccent),
                               ),
-
                               GestureDetector(
                                 onTap: () => Navigator.pop(context, true),
                                 child: _botaoPixel('SAIR', Colors.redAccent),
@@ -294,7 +303,7 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
     );
   }
 
-  // 🔘 BOTÃO PADRÃO
+  // 🔘 BOTÕES
   Widget _botaoPixel(String texto, Color cor) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 14),
@@ -314,7 +323,6 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
     );
   }
 
-  // 🔘 BOTÃO COM ÍCONE
   Widget _botaoPixelComIcone(String texto, IconData icone) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),

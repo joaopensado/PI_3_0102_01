@@ -11,7 +11,6 @@ class TelaInicial extends StatefulWidget {
 }
 
 class _TelaInicialState extends State<TelaInicial> {
-
   int etapa = 0;
   final AudioPlayer _player = AudioPlayer();
   bool _mutado = false; // NOVO: controle de mute
@@ -42,6 +41,133 @@ class _TelaInicialState extends State<TelaInicial> {
     Navigator.pushNamed(context, rota);
   }
 
+  Future<void> _iniciarNovoJogo(BuildContext context) async {
+    if (!mounted) return;
+
+    final nome = await _dialogNome(context);
+
+    if (nome == null || nome.isEmpty) return;
+
+    final personagem = await _dialogPersonagem(context);
+
+    if (personagem == null) return;
+
+    await _player.stop();
+
+    Navigator.pushNamed(
+      context,
+      '/mapa',
+      arguments: {
+        'nome': nome,
+        'personagem': personagem,
+      },
+    );
+  }
+
+  Future<String?> _dialogNome(BuildContext context) async {
+    TextEditingController controller = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Color(0xFF0A0E27),
+              border: Border.all(color: Colors.cyanAccent, width: 3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "NOME DO SAVE",
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    color: Colors.cyanAccent,
+                  ),
+                ),
+                SizedBox(height: 15),
+                TextField(
+                  controller: controller,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: "Digite seu nome...",
+                    hintStyle: TextStyle(color: Colors.white54),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.cyanAccent),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                _buildBotaoPixel(
+                  "CONFIRMAR",
+                  () => Navigator.pop(context, controller.text),
+                  true,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String?> _dialogPersonagem(BuildContext context) async {
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Color(0xFF0A0E27),
+              border: Border.all(color: Colors.cyanAccent, width: 3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "ESCOLHA O PERSONAGEM",
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    color: Colors.cyanAccent,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(
+                          context, 'assets/personagens/player-masc.png'),
+                      child: Image.asset('assets/personagens/player-masc.png',
+                          width: 60),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(
+                          context, 'assets/personagens/player-fem.png'),
+                      child: Image.asset('assets/personagens/player-fem.png',
+                          width: 60),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "Toque para escolher",
+                  style: TextStyle(color: Colors.white54, fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void _mostrarBibliotecaBloqueadaDialogo() {
     showDialog(
@@ -50,7 +176,8 @@ class _TelaInicialState extends State<TelaInicial> {
       builder: (BuildContext dialogContext) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -112,7 +239,8 @@ class _TelaInicialState extends State<TelaInicial> {
                 GestureDetector(
                   onTap: () => Navigator.pop(dialogContext),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 22, vertical: 12),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1A1F3A),
                       border: Border.all(color: Colors.cyanAccent, width: 2),
@@ -148,7 +276,6 @@ class _TelaInicialState extends State<TelaInicial> {
     return Scaffold(
       body: Stack(
         children: [
-
           // FUNDO
           Container(
             decoration: BoxDecoration(
@@ -178,30 +305,30 @@ class _TelaInicialState extends State<TelaInicial> {
                     fontFamily: 'PixelifySans',
                     height: 1.2,
                     shadows: [
-                      Shadow(color: Colors.black, blurRadius: 8, offset: Offset(4, 4)),
-                      Shadow(color: Colors.cyan, blurRadius: 15, offset: Offset(0, 0)),
+                      Shadow(
+                          color: Colors.black,
+                          blurRadius: 8,
+                          offset: Offset(4, 4)),
+                      Shadow(
+                          color: Colors.cyan,
+                          blurRadius: 15,
+                          offset: Offset(0, 0)),
                     ],
                   ),
                 ),
                 SizedBox(height: 60),
-
                 _buildBotaoPixel("NOVO JOGO", () {
                   _mostrarEscolhaLocal(context);
                 }, false),
-
                 SizedBox(height: 20),
-
                 _buildBotaoPixel("CONTINUAR", () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Funcionalidade em desenvolvimento!'),
-                      backgroundColor: Colors.orange
-                    ),
+                        content: Text('Funcionalidade em desenvolvimento!'),
+                        backgroundColor: Colors.orange),
                   );
                 }, false),
-
                 SizedBox(height: 15),
-
                 _buildBotaoPixel("CRÉDITOS", () {
                   Navigator.push(
                     context,
@@ -224,7 +351,9 @@ class _TelaInicialState extends State<TelaInicial> {
                   color: Colors.blue[900],
                   border: Border.all(color: Colors.white, width: 3),
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Colors.black, offset: Offset(4, 4))],
+                  boxShadow: [
+                    BoxShadow(color: Colors.black, offset: Offset(4, 4))
+                  ],
                 ),
                 child: Icon(
                   _mutado ? Icons.volume_off : Icons.volume_up,
@@ -264,22 +393,23 @@ class _TelaInicialState extends State<TelaInicial> {
                   ),
                 ),
                 SizedBox(height: 20),
-
-                _buildBotaoPixel("TESTAR NOVO JOGO", () { 
+                _buildBotaoPixel("TESTAR NOVO JOGO", () {
                   Navigator.pop(context);
-                  _navegarPara(context, '/mapa');
+
+                  Future.microtask(() {
+                    _iniciarNovoJogo(this.context);
+                  });
                 }, true),
-
                 SizedBox(height: 10),
-
                 _buildBotaoPixel("H15 TECNOLOGIA", () {
                   Navigator.pop(context);
                   _navegarPara(context, '/h15');
                 }, true),
-
                 SizedBox(height: 10),
-
-                _buildBotaoPixel(GameProgress.bibliotecaDesbloqueada ? "BIBLIOTECA" : "BIBLIOTECA 🔒", () {
+                _buildBotaoPixel(
+                    GameProgress.bibliotecaDesbloqueada
+                        ? "BIBLIOTECA"
+                        : "BIBLIOTECA 🔒", () {
                   if (!GameProgress.bibliotecaDesbloqueada) {
                     _mostrarBibliotecaBloqueadaDialogo();
                     return;
@@ -287,30 +417,22 @@ class _TelaInicialState extends State<TelaInicial> {
                   Navigator.pop(context);
                   _navegarPara(context, '/biblioteca');
                 }, true),
-
                 SizedBox(height: 10),
-
                 _buildBotaoPixel("PRAÇA", () {
                   Navigator.pop(context);
                   _navegarPara(context, '/refeitorio');
                 }, true),
-
                 SizedBox(height: 10),
-
                 _buildBotaoPixel("H12 ARQUITETURA", () {
                   Navigator.pop(context);
                   _navegarPara(context, '/h12');
                 }, true),
-
                 SizedBox(height: 10),
-
                 _buildBotaoPixel("MANACÁS (CAVE)", () {
                   Navigator.pop(context);
                   _navegarPara(context, '/manacas');
                 }, true),
-
                 SizedBox(height: 15),
-
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Text(
