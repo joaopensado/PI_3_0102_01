@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'tela_h15.dart';
 import 'arquiteturaOUT.dart';
 import 'creditos.dart';
+import 'game_progress.dart';
 
 class TelaInicial extends StatefulWidget {
   @override
@@ -39,6 +40,101 @@ class _TelaInicialState extends State<TelaInicial> {
   Future<void> _navegarPara(BuildContext context, String rota) async {
     await _player.stop();
     Navigator.pushNamed(context, rota);
+  }
+
+
+  void _mostrarBibliotecaBloqueadaDialogo() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0E27).withOpacity(0.96),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.cyanAccent, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.45),
+                  blurRadius: 18,
+                  offset: const Offset(6, 6),
+                ),
+                BoxShadow(
+                  color: Colors.cyanAccent.withOpacity(0.15),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.14),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.redAccent, width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.lock,
+                    color: Colors.redAccent,
+                    size: 34,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'ACESSO BLOQUEADO',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 20,
+                    color: Colors.cyanAccent,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'biblioteca bloqueada!!!\n\npasse primeiro pelo prédio H15',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 14,
+                    color: Colors.white,
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                GestureDetector(
+                  onTap: () => Navigator.pop(dialogContext),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1F3A),
+                      border: Border.all(color: Colors.cyanAccent, width: 2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'ENTENDI',
+                      style: TextStyle(
+                        fontFamily: 'PixelifySans',
+                        fontSize: 12,
+                        color: Colors.cyanAccent,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -183,7 +279,11 @@ class _TelaInicialState extends State<TelaInicial> {
 
                 SizedBox(height: 10),
 
-                _buildBotaoPixel("BIBLIOTECA", () {
+                _buildBotaoPixel(GameProgress.bibliotecaDesbloqueada ? "BIBLIOTECA" : "BIBLIOTECA 🔒", () {
+                  if (!GameProgress.bibliotecaDesbloqueada) {
+                    _mostrarBibliotecaBloqueadaDialogo();
+                    return;
+                  }
                   Navigator.pop(context);
                   _navegarPara(context, '/biblioteca');
                 }, true),

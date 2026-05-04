@@ -1,364 +1,752 @@
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'tela_inicial.dart';
+import 'biblioteca_image_screen.dart';
+import 'game_progress.dart';
 
-// ═══════════════════════════════════════════════
-//  TELA 4 — Corredor do Acervo (estantes)
-// ═══════════════════════════════════════════════
 class BibliotecaAcervoScreen extends StatefulWidget {
   const BibliotecaAcervoScreen({super.key});
 
   @override
-  State<BibliotecaAcervoScreen> createState() =>
-      _BibliotecaAcervoScreenState();
+  State<BibliotecaAcervoScreen> createState() => _BibliotecaAcervoScreenState();
 }
 
 class _BibliotecaAcervoScreenState extends State<BibliotecaAcervoScreen> {
-  // ── Áudio ──
-  final AudioPlayer _player = AudioPlayer();
-  bool isMuted = false;
+  final Set<int> _pedacosColetados = <int>{};
+  bool _puzzleAberto = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _tocarSom();
+  void _investigarCorredor(int numero) {
+    if (_pedacosColetados.contains(numero)) {
+      _mostrarAviso(
+        titulo: 'CORREDOR JÁ INVESTIGADO',
+        mensagem: 'Você já encontrou a parte da capa que estava escondida nesse corredor.',
+      );
+      return;
+    }
+
+    setState(() {
+      _pedacosColetados.add(numero);
+    });
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 420,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0E27).withOpacity(0.97),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.cyanAccent, width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.55),
+                  blurRadius: 20,
+                  offset: const Offset(6, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'PARTE DA CAPA ENCONTRADA!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 18,
+                    color: Colors.cyanAccent,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Image.asset(
+                  'assets/biblioteca/livro_segredo_animais_pedaco_$numero.png',
+                  width: 130,
+                  filterQuality: FilterQuality.none,
+                  isAntiAlias: false,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Você encontrou a parte $numero da capa do livro.\nPartes coletadas: ${_pedacosColetados.length}/4',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 12,
+                    color: Colors.white,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _BotaoAcervo(
+                  texto: _pedacosColetados.length == 4 ? 'MONTAR CAPA' : 'CONTINUAR PROCURANDO',
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (_pedacosColetados.length == 4) {
+                      Future.delayed(const Duration(milliseconds: 200), _abrirPuzzle);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  Future<void> _tocarSom() async {
-    await _player.setReleaseMode(ReleaseMode.loop);
-    await _player.play(AssetSource('audio/background_music_arq.mp3'));
+  void _mostrarAviso({required String titulo, required String mensagem}) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 420,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0E27).withOpacity(0.97),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.cyanAccent, width: 2.5),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  titulo,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 16,
+                    color: Colors.cyanAccent,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  mensagem,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 12,
+                    color: Colors.white,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _BotaoAcervo(
+                  texto: 'OK',
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  Future<void> _toggleSom() async {
-    setState(() => isMuted = !isMuted);
-    await _player.setVolume(isMuted ? 0 : 1);
-  }
+  Future<void> _abrirPuzzle() async {
+    if (_puzzleAberto) return;
+    _puzzleAberto = true;
 
-  @override
-  void dispose() {
-    _player.dispose();
-    super.dispose();
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _PuzzleLivroDialog(
+        onConcluido: () {
+          GameProgress.marcarLivroCorujitoEncontrado();
+          Navigator.pop(context); // fecha o puzzle
+          Navigator.pop(context); // volta para o Corujito
+        },
+      ),
+    );
+
+    _puzzleAberto = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // ── Cena pixel art ──
-          CustomPaint(
-            painter: _AcervoPainter(),
-            child: const SizedBox.expand(),
-          ),
-
-          // ── Botão de som ──
-          Positioned(
-            top: 40,
-            right: 20,
-            child: IconButton(
-              icon: Icon(
-                isMuted ? Icons.volume_off : Icons.volume_up,
-                color: Colors.white,
-                size: 30,
+    return BibliotecaSceneScaffold(
+      imageAsset: 'assets/biblioteca/biblioteca_acervo.png',
+      titulo: '',
+      descricao: '',
+      dicaRodape: '',
+      mostrarCaixaInformacao: false,
+      overlayBuilder: (context, size) {
+        return Stack(
+          children: [
+            Positioned(
+              top: 106,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF11151F).withOpacity(0.86),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.cyanAccent.withOpacity(0.75), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.35),
+                        blurRadius: 10,
+                        offset: const Offset(4, 4),
+                      ),
+                      BoxShadow(
+                        color: Colors.cyanAccent.withOpacity(0.10),
+                        blurRadius: 16,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.auto_stories_rounded, color: Colors.cyanAccent, size: 18),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Investigue os 4 corredores e colete as partes da capa. ${_pedacosColetados.length}/4',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'PixelifySans',
+                          fontSize: 12,
+                          color: Colors.white,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              onPressed: _toggleSom,
             ),
-          ),
+            _CorredorBiblioteca(
+              numero: 1,
+              left: size.width * 0.045,
+              top: size.height * 0.40,
+              width: size.width * 0.13,
+              height: size.height * 0.37,
+              coletado: _pedacosColetados.contains(1),
+              onTap: () => _investigarCorredor(1),
+            ),
+            _CorredorBiblioteca(
+              numero: 2,
+              left: size.width * 0.255,
+              top: size.height * 0.35,
+              width: size.width * 0.16,
+              height: size.height * 0.42,
+              coletado: _pedacosColetados.contains(2),
+              onTap: () => _investigarCorredor(2),
+            ),
+            _CorredorBiblioteca(
+              numero: 3,
+              left: size.width * 0.555,
+              top: size.height * 0.35,
+              width: size.width * 0.16,
+              height: size.height * 0.42,
+              coletado: _pedacosColetados.contains(3),
+              onTap: () => _investigarCorredor(3),
+            ),
+            _CorredorBiblioteca(
+              numero: 4,
+              left: size.width * 0.82,
+              top: size.height * 0.37,
+              width: size.width * 0.14,
+              height: size.height * 0.40,
+              coletado: _pedacosColetados.contains(4),
+              onTap: () => _investigarCorredor(4),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
 
-          // ── Caixa de diálogo com botão de voltar ──
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.75),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white24, width: 1.5),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'ACERVO',
-                    style: TextStyle(
-                      fontFamily: 'PixelifySans',
-                      fontSize: 20,
-                      color: Colors.cyanAccent,
-                      letterSpacing: 3,
+class _CorredorBiblioteca extends StatelessWidget {
+  final int numero;
+  final double left;
+  final double top;
+  final double width;
+  final double height;
+  final bool coletado;
+  final VoidCallback onTap;
+
+  const _CorredorBiblioteca({
+    required this.numero,
+    required this.left,
+    required this.top,
+    required this.width,
+    required this.height,
+    required this.coletado,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color destaque = coletado ? Colors.greenAccent : Colors.cyanAccent;
+
+    return Positioned(
+      left: left,
+      top: top,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Center(
+                  child: Container(
+                    width: width * 0.52,
+                    height: height * 0.86,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(26),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: coletado
+                            ? [
+                                Colors.greenAccent.withOpacity(0.14),
+                                Colors.greenAccent.withOpacity(0.03),
+                              ]
+                            : [
+                                Colors.cyanAccent.withOpacity(0.14),
+                                Colors.cyanAccent.withOpacity(0.03),
+                              ],
+                      ),
+                      border: Border.all(
+                        color: destaque.withOpacity(0.20),
+                        width: 1.2,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                ),
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF0C1120).withOpacity(0.92),
+                          border: Border.all(color: destaque, width: 2.2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: destaque.withOpacity(0.18),
+                              blurRadius: 14,
+                              spreadRadius: 1,
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.30),
+                              blurRadius: 8,
+                              offset: const Offset(3, 3),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          coletado ? Icons.check_rounded : Icons.search_rounded,
+                          color: destaque,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0C1120).withOpacity(0.90),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: destaque.withOpacity(0.85), width: 1.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.28),
+                              blurRadius: 8,
+                              offset: const Offset(3, 3),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'CORREDOR $numero',
+                              style: TextStyle(
+                                fontFamily: 'PixelifySans',
+                                fontSize: 10,
+                                color: destaque,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              coletado ? 'COLETADO' : 'INVESTIGAR',
+                              style: TextStyle(
+                                fontFamily: 'PixelifySans',
+                                fontSize: 9,
+                                color: Colors.white.withOpacity(0.90),
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Icon(
+                      Icons.keyboard_double_arrow_down_rounded,
+                      color: destaque.withOpacity(0.90),
+                      size: 26,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PuzzleLivroDialog extends StatefulWidget {
+  final VoidCallback onConcluido;
+
+  const _PuzzleLivroDialog({required this.onConcluido});
+
+  @override
+  State<_PuzzleLivroDialog> createState() => _PuzzleLivroDialogState();
+}
+
+class _PuzzleLivroDialogState extends State<_PuzzleLivroDialog> {
+  final List<int> _pecasDisponiveis = <int>[3, 1, 4, 2];
+  final List<int?> _slots = <int?>[null, null, null, null];
+
+  String _assetPeca(int numero) => 'assets/biblioteca/livro_segredo_animais_pedaco_$numero.png';
+
+  bool get _montadoCorretamente {
+    for (int i = 0; i < 4; i++) {
+      if (_slots[i] != i + 1) return false;
+    }
+    return true;
+  }
+
+  void _colocarPeca(int indiceSlot, int numeroPeca) {
+    setState(() {
+      final pecaAntiga = _slots[indiceSlot];
+      if (pecaAntiga != null && !_pecasDisponiveis.contains(pecaAntiga)) {
+        _pecasDisponiveis.add(pecaAntiga);
+      }
+      _slots[indiceSlot] = numeroPeca;
+      _pecasDisponiveis.remove(numeroPeca);
+    });
+  }
+
+  void _removerPeca(int indiceSlot) {
+    setState(() {
+      final peca = _slots[indiceSlot];
+      if (peca != null && !_pecasDisponiveis.contains(peca)) {
+        _pecasDisponiveis.add(peca);
+      }
+      _slots[indiceSlot] = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 680),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0E27).withOpacity(0.98),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.cyanAccent, width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.55),
+                blurRadius: 22,
+                offset: const Offset(6, 6),
+              ),
+            ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'MONTE A CAPA DO LIVRO',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 20,
+                    color: Colors.cyanAccent,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Arraste cada parte para o lugar correto e forme o livro "O Segredo dos Animais".',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    fontSize: 12,
+                    color: Colors.white,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 18,
+                  runSpacing: 18,
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _buildTabuleiro(),
+                    _buildBancoDePecas(),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (_montadoCorretamente)
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.greenAccent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.greenAccent, width: 2),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'CAPA MONTADA!\nVocê encontrou o livro perdido do Corujito.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'PixelifySans',
+                            fontSize: 13,
+                            color: Colors.greenAccent,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _BotaoAcervo(
+                          texto: 'VOLTAR AO CORUJITO',
+                          onTap: widget.onConcluido,
+                        ),
+                      ],
+                    ),
+                  )
+                else if (!_slots.contains(null))
                   const Text(
-                    'Você explorou toda a biblioteca!\nO conhecimento está ao alcance das suas mãos.',
+                    'A capa ainda não está correta. Toque em uma peça posicionada para removê-la e tente de novo.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'PixelifySans',
-                      fontSize: 14,
-                      color: Colors.white,
-                      height: 1.5,
+                      fontSize: 11,
+                      color: Colors.orangeAccent,
+                      height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-                  // Botão voltar ao menu — mesmo estilo do jogo
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => TelaInicial()),
-                        (route) => false,
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 30),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[900],
-                        border: Border.all(color: Colors.white, width: 3),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black, offset: Offset(5, 5))
-                        ],
-                      ),
-                      child: const Text(
-                        'VOLTAR AO MENU',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontFamily: 'PixelifySans',
-                          letterSpacing: 2,
-                        ),
-                      ),
+  Widget _buildTabuleiro() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Column(
+        children: [
+          Row(children: [_buildSlot(0), _buildSlot(1)]),
+          Row(children: [_buildSlot(2), _buildSlot(3)]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlot(int indice) {
+    final peca = _slots[indice];
+    return DragTarget<int>(
+      onWillAccept: (_) => true,
+      onAccept: (data) => _colocarPeca(indice, data),
+      builder: (context, candidateData, rejectedData) {
+        return Container(
+          width: 130,
+          height: 170,
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(candidateData.isNotEmpty ? 0.16 : 0.07),
+            border: Border.all(
+              color: candidateData.isNotEmpty ? Colors.cyanAccent : Colors.white30,
+              width: 2,
+            ),
+          ),
+          child: peca == null
+              ? Center(
+                  child: Text(
+                    'PARTE ${indice + 1}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 11,
+                      color: Colors.white.withOpacity(0.55),
                     ),
                   ),
-                ],
-              ),
+                )
+              : GestureDetector(
+                  onTap: () => _removerPeca(indice),
+                  child: Image.asset(
+                    _assetPeca(peca),
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.none,
+                    isAntiAlias: false,
+                  ),
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBancoDePecas() {
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'PEÇAS ENCONTRADAS',
+            style: TextStyle(
+              fontFamily: 'PixelifySans',
+              fontSize: 12,
+              color: Colors.cyanAccent,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: _pecasDisponiveis.map((numero) {
+              return Draggable<int>(
+                data: numero,
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: Image.asset(
+                    _assetPeca(numero),
+                    width: 95,
+                    filterQuality: FilterQuality.none,
+                    isAntiAlias: false,
+                  ),
+                ),
+                childWhenDragging: Opacity(
+                  opacity: 0.25,
+                  child: _buildMiniPeca(numero),
+                ),
+                child: _buildMiniPeca(numero),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _pecasDisponiveis.isEmpty
+                ? 'Toque em uma peça posicionada para remover.'
+                : 'Arraste as peças para os espaços da capa.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'PixelifySans',
+              fontSize: 10,
+              color: Colors.white.withOpacity(0.62),
+              height: 1.4,
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildMiniPeca(int numero) {
+    return Container(
+      width: 95,
+      height: 125,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.cyanAccent.withOpacity(0.7), width: 2),
+        color: Colors.black.withOpacity(0.35),
+      ),
+      child: Image.asset(
+        _assetPeca(numero),
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.none,
+        isAntiAlias: false,
+      ),
+    );
+  }
 }
 
-// ── Paleta de cores de livros ──
-const List<Color> _bookColors = [
-  Color(0xFFE53935), Color(0xFF1565C0), Color(0xFF2E7D32),
-  Color(0xFFF57F17), Color(0xFF6A1B9A), Color(0xFF00838F),
-  Color(0xFF4E342E), Color(0xFF37474F), Color(0xFF558B2F),
-  Color(0xFFAD1457), Color(0xFFF4511E), Color(0xFF00695C),
-  Color(0xFF283593), Color(0xFF827717), Color(0xFF880E4F),
-  Color(0xFFC62828), Color(0xFF0D47A1), Color(0xFF1B5E20),
-];
+class _BotaoAcervo extends StatelessWidget {
+  final String texto;
+  final VoidCallback onTap;
 
-Color _bookAt(int idx) => _bookColors[idx % _bookColors.length];
+  const _BotaoAcervo({
+    required this.texto,
+    required this.onTap,
+  });
 
-// ═══════════════════════════════════════════════
-//  PAINTER — Corredor de acervo (perspectiva)
-// ═══════════════════════════════════════════════
-class _AcervoPainter extends CustomPainter {
   @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final p = Paint()..style = PaintingStyle.fill;
-
-    // ── Borda preta (estilo da imagem original) ──
-    p.color = Colors.black;
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), p);
-
-    const double bdr = 12.0;
-    final Rect inner = Rect.fromLTWH(bdr, bdr, w - bdr * 2, h - bdr * 2);
-    canvas.save();
-    canvas.clipRect(inner);
-
-    // ── Teto ──
-    p.color = const Color(0xFF3E3E3E);
-    canvas.drawRect(Rect.fromLTWH(bdr, bdr, w - bdr * 2, h * 0.20), p);
-
-    // Dutos no teto
-    p.color = const Color(0xFF555555);
-    canvas.drawRect(Rect.fromLTWH(bdr, bdr + h * 0.02, w - bdr * 2, h * 0.025), p);
-    p.color = const Color(0xFF4A4A4A);
-    canvas.drawRect(Rect.fromLTWH(bdr, bdr + h * 0.07, w - bdr * 2, h * 0.018), p);
-
-    final double cx = w / 2;
-    final double vanishY = h * 0.35;
-
-    // Luminárias perspectivadas
-    p.color = const Color(0xFFFFF8C0);
-    final List<double> lightSizes = [
-      w * 0.30, w * 0.22, w * 0.16, w * 0.11, w * 0.07
-    ];
-    final List<double> lightYs = [
-      h * 0.12, h * 0.155, h * 0.175, h * 0.190, h * 0.200
-    ];
-    for (int i = 0; i < lightSizes.length; i++) {
-      canvas.drawRect(
-        Rect.fromLTWH(cx - lightSizes[i] / 2, bdr + lightYs[i], lightSizes[i], h * 0.018),
-        p,
-      );
-    }
-    p.color = const Color(0xFFFFF8C0).withOpacity(0.08);
-    canvas.drawRect(Rect.fromLTWH(bdr, bdr, w - bdr * 2, h * 0.22), p);
-
-    // ── Chão ──
-    p.color = const Color(0xFF3A3A40);
-    canvas.drawRect(Rect.fromLTWH(bdr, h * 0.70, w - bdr * 2, h * 0.30), p);
-
-    // Grade do chão
-    p.color = const Color(0xFF303038);
-    for (int r = 0; r < 8; r++) {
-      canvas.drawRect(
-          Rect.fromLTWH(bdr, h * 0.70 + r * h * 0.042, w - bdr * 2, 1), p);
-    }
-
-    // Reflexo das luminárias no chão
-    p.color = Colors.white.withOpacity(0.06);
-    canvas.drawRect(Rect.fromLTWH(cx - w * 0.12, h * 0.70, w * 0.24, h * 0.08), p);
-
-    // Linhas brancas no chão
-    p.color = Colors.white.withOpacity(0.80);
-    canvas.drawRect(Rect.fromLTWH(cx - 2, h * 0.70, 4, h * 0.30), p);
-    canvas.drawRect(Rect.fromLTWH(cx - w * 0.14, h * 0.70, 4, h * 0.30), p);
-    canvas.drawRect(Rect.fromLTWH(cx + w * 0.14, h * 0.70, 4, h * 0.30), p);
-
-    // Faixa tátil vermelha (rodapé)
-    p.color = const Color(0xFFCC1100);
-    canvas.drawRect(Rect.fromLTWH(bdr, h * 0.94, w - bdr * 2, h * 0.06), p);
-    p.color = const Color(0xFFBB0F00);
-    for (int i = 0; i < 18; i++) {
-      canvas.drawCircle(
-        Offset(bdr + 20 + i * ((w - bdr * 2 - 20) / 18), h * 0.97),
-        4,
-        p,
-      );
-    }
-
-    // ── Estantes com perspectiva ──
-    _drawShelfSide(canvas, p, w, h,
-        side: 'left', cx: cx, vanishY: vanishY, bdr: bdr);
-    _drawShelfSide(canvas, p, w, h,
-        side: 'right', cx: cx, vanishY: vanishY, bdr: bdr);
-
-    // ── Fundo do corredor (passagem) ──
-    p.color = const Color(0xFF1A1A1A);
-    canvas.drawRect(
-        Rect.fromLTWH(cx - w * 0.05, vanishY, w * 0.10, h * 0.40), p);
-    p.color = const Color(0xFF252525);
-    canvas.drawRect(
-        Rect.fromLTWH(cx - w * 0.04, vanishY + h * 0.01, w * 0.08, h * 0.38), p);
-
-    canvas.restore();
-  }
-
-  void _drawShelfSide(
-    Canvas canvas,
-    Paint p,
-    double w,
-    double h, {
-    required String side,
-    required double cx,
-    required double vanishY,
-    required double bdr,
-  }) {
-    final bool isLeft = side == 'left';
-    const int numBays = 3;
-
-    for (int bay = 0; bay < numBays; bay++) {
-      final double t0 = bay / numBays;
-      final double t1 = (bay + 1) / numBays;
-
-      final double xFront = isLeft
-          ? bdr + (cx - bdr) * (1 - t0) * 0.42
-          : w - bdr - (w - bdr - cx) * (1 - t0) * 0.42;
-      final double xBack = isLeft
-          ? bdr + (cx - bdr) * (1 - t1) * 0.42
-          : w - bdr - (w - bdr - cx) * (1 - t1) * 0.42;
-
-      final double yFront = h * 0.20 + t0 * (h * 0.70 - h * 0.20);
-      final double yBack = h * 0.20 + t1 * (h * 0.70 - h * 0.20);
-
-      // Estrutura da estante
-      p.color = const Color(0xFFC8A868);
-      final Path shelf = Path();
-      if (isLeft) {
-        shelf
-          ..moveTo(bdr, yFront)
-          ..lineTo(xFront, yFront)
-          ..lineTo(xBack, yBack)
-          ..lineTo(bdr, yBack)
-          ..close();
-      } else {
-        shelf
-          ..moveTo(w - bdr, yFront)
-          ..lineTo(xFront, yFront)
-          ..lineTo(xBack, yBack)
-          ..lineTo(w - bdr, yBack)
-          ..close();
-      }
-      canvas.drawPath(shelf, p);
-
-      // Livros nas prateleiras
-      final double shelfHeight = yBack - yFront;
-      const int numRows = 5;
-      final double rowH = shelfHeight / numRows;
-
-      for (int row = 0; row < numRows; row++) {
-        final double rowY = yFront + row * rowH;
-
-        // Linha da prateleira
-        p.color = const Color(0xFF8B6030);
-        canvas.drawRect(
-          Rect.fromLTWH(
-            isLeft ? bdr : xFront,
-            rowY,
-            isLeft ? xFront - bdr : w - bdr - xFront,
-            2.5,
-          ),
-          p,
-        );
-
-        final int numBooks = (8 - bay * 2).clamp(3, 8);
-        final double totalW = isLeft ? (xFront - bdr - 4) : (w - bdr - xFront - 4);
-        final double bookW = totalW / numBooks;
-        final double bookH = rowH - 4;
-
-        for (int b = 0; b < numBooks; b++) {
-          p.color = _bookAt(bay * 20 + row * 8 + b);
-          final double bx =
-              isLeft ? bdr + 2 + b * bookW : xFront + 2 + b * bookW;
-          final double by = rowY + 2.5;
-          canvas.drawRect(Rect.fromLTWH(bx, by, bookW - 1, bookH), p);
-          p.color = p.color.withOpacity(0.5);
-          canvas.drawRect(Rect.fromLTWH(bx, by, 2, bookH), p);
-        }
-
-        // Etiqueta de classificação
-        if (row == 0) {
-          p.color = Colors.white.withOpacity(0.85);
-          canvas.drawRect(
-            Rect.fromLTWH(
-                isLeft ? bdr + 2 : xFront + 2, yFront - 8, 40, 8),
-            p,
-          );
-        }
-      }
-
-      // Pilar vertical
-      p.color = const Color(0xFF9A7040);
-      canvas.drawRect(
-        Rect.fromLTWH(
-          isLeft ? xFront - 4 : xFront,
-          yFront,
-          4,
-          yBack - yFront,
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1F3A),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.cyanAccent, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.30),
+              blurRadius: 8,
+              offset: const Offset(3, 3),
+            ),
+          ],
         ),
-        p,
-      );
-    }
+        child: Text(
+          texto,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'PixelifySans',
+            fontSize: 12,
+            color: Colors.cyanAccent,
+            letterSpacing: 1,
+          ),
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(_) => false;
 }

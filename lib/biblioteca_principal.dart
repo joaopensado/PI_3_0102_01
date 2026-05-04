@@ -1,119 +1,110 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'biblioteca_acervo.dart';
+import 'biblioteca_image_screen.dart';
+import 'game_progress.dart';
+import 'tela_inicial.dart';
 
-// ═══════════════════════════════════════════════
-//  TELA 3 — Biblioteca Principal (Área de Leitura)
-// ═══════════════════════════════════════════════
 class BibliotecaPrincipalScreen extends StatefulWidget {
   const BibliotecaPrincipalScreen({super.key});
 
   @override
-  State<BibliotecaPrincipalScreen> createState() =>
-      _BibliotecaPrincipalScreenState();
+  State<BibliotecaPrincipalScreen> createState() => _BibliotecaPrincipalScreenState();
 }
 
-class _BibliotecaPrincipalScreenState
-    extends State<BibliotecaPrincipalScreen> {
-  // ── Áudio ──
-  final AudioPlayer _player = AudioPlayer();
-  bool isMuted = false;
+class _BibliotecaPrincipalScreenState extends State<BibliotecaPrincipalScreen> {
+  bool _mostrarMarcadorPrateleiras = GameProgress.missaoCorujitoAceita &&
+      !GameProgress.livroCorujitoEncontrado &&
+      !GameProgress.livroCorujitoEntregue;
 
-  @override
-  void initState() {
-    super.initState();
-    _tocarSom();
-  }
+  Future<void> _abrirDialogoCorujito(BuildContext context) async {
+    final String tipoDialogo;
 
-  Future<void> _tocarSom() async {
-    await _player.setReleaseMode(ReleaseMode.loop);
-    await _player.play(AssetSource('audio/background_music_arq.mp3'));
-  }
+    if (GameProgress.livroCorujitoEntregue) {
+      tipoDialogo = 'finalizado';
+    } else if (GameProgress.livroCorujitoEncontrado) {
+      tipoDialogo = 'devolucao';
+    } else if (GameProgress.missaoCorujitoAceita) {
+      tipoDialogo = 'lembrete';
+    } else {
+      tipoDialogo = 'inicio';
+    }
 
-  Future<void> _toggleSom() async {
-    setState(() => isMuted = !isMuted);
-    await _player.setVolume(isMuted ? 0 : 1);
-  }
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _DialogoCorujito(tipoDialogo: tipoDialogo),
+    );
 
-  @override
-  void dispose() {
-    _player.dispose();
-    super.dispose();
+    if (!mounted) return;
+
+    setState(() {
+      _mostrarMarcadorPrateleiras = GameProgress.missaoCorujitoAceita &&
+          !GameProgress.livroCorujitoEncontrado &&
+          !GameProgress.livroCorujitoEntregue;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const BibliotecaAcervoScreen()),
-        ),
-        child: Stack(
+    return BibliotecaSceneScaffold(
+      imageAsset: 'assets/biblioteca/biblioteca_principal.png',
+      titulo: '',
+      descricao: '',
+      dicaRodape: '',
+      mostrarCaixaInformacao: false,
+      overlayBuilder: (context, size) {
+        final corujitoWidth = size.width * 0.115;
+
+        return Stack(
           children: [
-            // ── Cena pixel art ──
-            CustomPaint(
-              painter: _PrincipalPainter(),
-              child: const SizedBox.expand(),
-            ),
-
-            // ── Botão de som ──
-            Positioned(
-              top: 40,
-              right: 20,
-              child: IconButton(
-                icon: Icon(
-                  isMuted ? Icons.volume_off : Icons.volume_up,
-                  color: Colors.white,
-                  size: 30,
-                ),
-                onPressed: _toggleSom,
+            if (_mostrarMarcadorPrateleiras)
+              BibliotecaIndicadorEntrada(
+                leftFactor: 0.31,
+                topFactor: 0.34,
+                sizeFactor: 0.055,
+                label: 'PROCURAR',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BibliotecaAcervoScreen()),
+                  ).then((_) {
+                    if (!mounted) return;
+                    setState(() {
+                      _mostrarMarcadorPrateleiras = GameProgress.missaoCorujitoAceita &&
+                          !GameProgress.livroCorujitoEncontrado &&
+                          !GameProgress.livroCorujitoEntregue;
+                    });
+                  });
+                },
               ),
-            ),
-
-            // ── Caixa de diálogo ──
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                margin: const EdgeInsets.all(20),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.75),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24, width: 1.5),
-                ),
+            Positioned(
+              left: size.width * 0.41,
+              top: size.height * 0.53,
+              child: GestureDetector(
+                onTap: () => _abrirDialogoCorujito(context),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'ÁREA DE LEITURA',
-                      style: TextStyle(
-                        fontFamily: 'PixelifySans',
-                        fontSize: 20,
-                        color: Colors.cyanAccent,
-                        letterSpacing: 3,
-                      ),
+                    Image.asset(
+                      'assets/personagens/corujito.png',
+                      width: corujitoWidth,
+                      filterQuality: FilterQuality.none,
+                      isAntiAlias: false,
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'A Biblioteca Virtual Pearson está disponível.\nEscolha um lugar para estudar e explore o acervo.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'PixelifySans',
-                        fontSize: 14,
-                        color: Colors.white,
-                        height: 1.5,
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.72),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white24),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '[ TOQUE PARA EXPLORAR O ACERVO ]',
-                      style: TextStyle(
-                        fontFamily: 'PixelifySans',
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.6),
-                        letterSpacing: 2,
+                      child: const Text(
+                        'CORUJITO',
+                        style: TextStyle(
+                          fontFamily: 'PixelifySans',
+                          fontSize: 10,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -121,241 +112,438 @@ class _BibliotecaPrincipalScreenState
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+class _FalaDialogo {
+  final String personagem;
+  final String texto;
+
+  const _FalaDialogo({
+    required this.personagem,
+    required this.texto,
+  });
+}
+
+class _DialogoCorujito extends StatefulWidget {
+  final String tipoDialogo;
+
+  const _DialogoCorujito({
+    required this.tipoDialogo,
+  });
+
+  @override
+  State<_DialogoCorujito> createState() => _DialogoCorujitoState();
+}
+
+class _DialogoCorujitoState extends State<_DialogoCorujito> {
+  static const String nomeJogador = 'Jogador';
+
+  late List<_FalaDialogo> _falas;
+  int _indiceFala = 0;
+  bool _mostrarOpcoes = false;
+  bool _mostrarOpcoesFinais = false;
+  bool _fecharAoFinal = false;
+  bool _marcarLivroEntregueAoFinal = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _configurarDialogoInicial();
+  }
+
+  void _configurarDialogoInicial() {
+    switch (widget.tipoDialogo) {
+      case 'devolucao':
+        _falas = _falasDevolucaoLivro();
+        _marcarLivroEntregueAoFinal = true;
+        break;
+      case 'lembrete':
+        _falas = const [
+          _FalaDialogo(
+            personagem: 'CORUJITO',
+            texto:
+                'Você voltou! Ainda preciso do meu livro perdido. Ele é um livro com várias páginas, muito grosso, e sua cor azul é azul escuro. Pelo que eu me lembre a última vez que eu estive com ele eu estava passando perto das prateleiras ali atrás, acredito que ele esteja nessa região.',
+          ),
+          _FalaDialogo(
+            personagem: 'JOGADOR',
+            texto: 'Pode deixar, Corujito. Vou continuar procurando!',
+          ),
+        ];
+        _fecharAoFinal = true;
+        break;
+      case 'finalizado':
+        _falas = const [
+          _FalaDialogo(
+            personagem: 'CORUJITO',
+            texto: 'Não há de que! É um prazer ajudá-lo. Boa sorte nessa missão! Até mais!',
+          ),
+        ];
+        _fecharAoFinal = true;
+        break;
+      default:
+        _falas = _falasInicio();
+        _mostrarOpcoes = false;
+        break;
+    }
+  }
+
+  List<_FalaDialogo> _falasInicio() {
+    return const [
+      _FalaDialogo(
+        personagem: 'JOGADOR',
+        texto: 'Oi Sr. Coruja! Finalmente te encontrei! Porque você está triste? Oque aconteceu?',
+      ),
+      _FalaDialogo(
+        personagem: 'CORUJITO',
+        texto:
+            'Olá… Quem é você? Obrigado pela preocupação, mas está tudo bem, é que eu perdi meu livro preferido e não estou conseguindo encontrá-lo, não sei mais o que fazer.',
+      ),
+      _FalaDialogo(
+        personagem: 'JOGADOR',
+        texto:
+            'Meu nome é $nomeJogador, e o seu? Eu vim te procurar pois preciso da sua ajuda! Fui enviado para procurar e salvar a Capivarilda, o Pingo me contou que ela está perdida e não vê ela a um longo tempo. Então eu decidi ajudá-lo a encontrá-la. Ele me disse que você pode me ajudar!',
+      ),
+      _FalaDialogo(
+        personagem: 'CORUJITO',
+        texto:
+            'Pode me chamar de Corujito! Que bacana que você está disposto a ajudar! Ela sumiu faz um tempo já, mas eu acho que posso te ajudar nessa missão. Que tal você achar meu livro e como recompensa eu te passo uma informação! O que você acha??',
+      ),
+    ];
+  }
+
+  List<_FalaDialogo> _falasAceitouMissao() {
+    return const [
+      _FalaDialogo(
+        personagem: 'CORUJITO',
+        texto:
+            'Ufa! Que bom que você topou! Agora vamos lá, o meu livro perdido é o “Segredo dos Animais”, ele é um livro com várias páginas, muito grosso, e sua cor azul é azul escuro. Pelo que eu me lembre a última vez que eu estive com ele eu estava passando perto das prateleiras ali atrás, acredito que ele esteja nessa região. Se você achar pode trazer para mim, que logo em seguida eu te ajudo!',
+      ),
+      _FalaDialogo(
+        personagem: 'JOGADOR',
+        texto: 'Combinado! Vou procurar, já volto!',
+      ),
+    ];
+  }
+
+  List<_FalaDialogo> _falasDevolucaoLivro() {
+    return const [
+      _FalaDialogo(
+        personagem: 'JOGADOR',
+        texto: 'Encontrei! Aqui está seu livro Corujito.',
+      ),
+      _FalaDialogo(
+        personagem: 'CORUJITO',
+        texto: 'Nossa! Que bom que você achou! Achei que nunca mais ia ver ele novamente, muito obrigado mesmo!',
+      ),
+      _FalaDialogo(
+        personagem: 'CORUJITO',
+        texto:
+            'Agora conforme nosso combinado, vou te passar algumas informações. A última vez que eu vi a Capivarilda eu estava com ela no refeitório, porém voltei mais cedo para a biblioteca e ela ficou por lá. Procure pelo Don Ratatoni, o rato, ele sempre está na Praça de Alimentação e sabe de tudo que acontece por lá!',
+      ),
+      _FalaDialogo(
+        personagem: 'JOGADOR',
+        texto: 'Não precisa agradecer, foi apenas um favor!',
+      ),
+      _FalaDialogo(
+        personagem: 'JOGADOR',
+        texto:
+            'Hum… entendi. Vou ir para a Praça de Alimentação para conversar com o Don Ratatoni. Muito obrigado pela informação, me ajudou muito!',
+      ),
+      _FalaDialogo(
+        personagem: 'JOGADOR',
+        texto:
+            'Bom Corujito, vou indo nessa, não tenho tempo a perder! E novamente, muito obrigado por toda ajuda, espero te reencontrar em breve! Até a próxima!',
+      ),
+      _FalaDialogo(
+        personagem: 'CORUJITO',
+        texto: 'Não há de que! É um prazer ajudá-lo. Boa sorte nessa missão! Até mais!',
+      ),
+    ];
+  }
+
+  void _proximaFala() {
+    if (_mostrarOpcoes || _mostrarOpcoesFinais) return;
+
+    if (_indiceFala < _falas.length - 1) {
+      setState(() {
+        _indiceFala++;
+      });
+      return;
+    }
+
+    if (widget.tipoDialogo == 'inicio' && !GameProgress.missaoCorujitoAceita) {
+      setState(() {
+        _mostrarOpcoes = true;
+      });
+      return;
+    }
+
+    if (_marcarLivroEntregueAoFinal) {
+      GameProgress.entregarLivroCorujito();
+      setState(() {
+        _mostrarOpcoesFinais = true;
+        _marcarLivroEntregueAoFinal = false;
+      });
+      return;
+    }
+
+    if (_fecharAoFinal) {
+      Navigator.pop(context);
+    }
+  }
+
+  void _aceitarProposta() {
+    GameProgress.aceitarMissaoCorujito();
+
+    setState(() {
+      _falas = _falasAceitouMissao();
+      _indiceFala = 0;
+      _mostrarOpcoes = false;
+      _fecharAoFinal = true;
+    });
+  }
+
+  void _recusarProposta() {
+    Navigator.pop(context);
+  }
+
+  Future<void> _irParaPracaAlimentacao() async {
+    await BibliotecaAudioController.parar();
+    if (!mounted) return;
+    Navigator.pop(context);
+    Navigator.pushNamed(context, '/refeitorio');
+  }
+
+  Future<void> _voltarMenuPrincipal() async {
+    await BibliotecaAudioController.parar();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => TelaInicial()),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final falaAtual = _falas[_indiceFala];
+    final bool falandoCorujito = falaAtual.personagem == 'CORUJITO';
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 760,
+          maxHeight: 560,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0E27).withOpacity(0.97),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.cyanAccent, width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.50),
+                blurRadius: 20,
+                offset: const Offset(6, 6),
+              ),
+              BoxShadow(
+                color: Colors.cyanAccent.withOpacity(0.13),
+                blurRadius: 22,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  if (falandoCorujito)
+                    Image.asset(
+                      'assets/personagens/corujito.png',
+                      width: 78,
+                      height: 78,
+                      filterQuality: FilterQuality.none,
+                      isAntiAlias: false,
+                    )
+                  else
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: Colors.blue[900],
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                    ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: falandoCorujito
+                            ? Colors.cyanAccent.withOpacity(0.16)
+                            : Colors.blueAccent.withOpacity(0.16),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: falandoCorujito ? Colors.cyanAccent : Colors.blueAccent,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Text(
+                        falaAtual.personagem,
+                        style: TextStyle(
+                          fontFamily: 'PixelifySans',
+                          fontSize: 16,
+                          color: falandoCorujito ? Colors.cyanAccent : Colors.white,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      falaAtual.texto,
+                      style: const TextStyle(
+                        fontFamily: 'PixelifySans',
+                        fontSize: 14,
+                        color: Colors.white,
+                        height: 1.55,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_mostrarOpcoes)
+                Column(
+                  children: [
+                    _BotaoDialogoCorujito(
+                      texto: 'Por mim pode ser!',
+                      onTap: _aceitarProposta,
+                    ),
+                    const SizedBox(height: 10),
+                    _BotaoDialogoCorujito(
+                      texto: 'Não estou interessado nessa proposta.',
+                      onTap: _recusarProposta,
+                      corBorda: Colors.redAccent,
+                      corTexto: Colors.redAccent,
+                    ),
+                  ],
+                )
+              else if (_mostrarOpcoesFinais)
+                Column(
+                  children: [
+                    _BotaoDialogoCorujito(
+                      texto: 'IR PARA A PRAÇA DE ALIMENTAÇÃO',
+                      onTap: _irParaPracaAlimentacao,
+                    ),
+                    const SizedBox(height: 10),
+                    _BotaoDialogoCorujito(
+                      texto: 'VOLTAR PARA O MENU PRINCIPAL',
+                      onTap: _voltarMenuPrincipal,
+                      corBorda: Colors.white70,
+                      corTexto: Colors.white,
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (!_fecharAoFinal || _indiceFala < _falas.length - 1)
+                      Text(
+                        '[ TOQUE PARA CONTINUAR ]',
+                        style: TextStyle(
+                          fontFamily: 'PixelifySans',
+                          fontSize: 10,
+                          color: Colors.white.withOpacity(0.55),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    const SizedBox(width: 12),
+                    _BotaoDialogoCorujito(
+                      texto: _indiceFala == _falas.length - 1 && _fecharAoFinal
+                          ? 'FECHAR'
+                          : 'CONTINUAR',
+                      onTap: _proximaFala,
+                      larguraFixa: false,
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ── Paleta de cores de livros ──
-const List<Color> _bookColors = [
-  Color(0xFFE53935), Color(0xFF1565C0), Color(0xFF2E7D32),
-  Color(0xFFF57F17), Color(0xFF6A1B9A), Color(0xFF00838F),
-  Color(0xFF4E342E), Color(0xFF37474F), Color(0xFF558B2F),
-  Color(0xFFAD1457), Color(0xFFF4511E), Color(0xFF00695C),
-  Color(0xFF283593), Color(0xFF827717), Color(0xFF880E4F),
-];
+class _BotaoDialogoCorujito extends StatelessWidget {
+  final String texto;
+  final VoidCallback onTap;
+  final Color corBorda;
+  final Color corTexto;
+  final bool larguraFixa;
 
-Color _bookAt(int seed) => _bookColors[seed % _bookColors.length];
-
-// ═══════════════════════════════════════════════
-//  PAINTER — Biblioteca principal
-// ═══════════════════════════════════════════════
-class _PrincipalPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final p = Paint()..style = PaintingStyle.fill;
-
-    // ── Teto (concreto industrial) ──
-    p.color = const Color(0xFF484848);
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h * 0.18), p);
-
-    // Dutos
-    p.color = const Color(0xFF585858);
-    canvas.drawRect(Rect.fromLTWH(0, h * 0.02, w, h * 0.03), p);
-    canvas.drawRect(Rect.fromLTWH(0, h * 0.07, w * 0.60, h * 0.025), p);
-    p.color = const Color(0xFF404040);
-    canvas.drawRect(Rect.fromLTWH(w * 0.15, 0, w * 0.06, h * 0.09), p);
-    canvas.drawRect(Rect.fromLTWH(w * 0.50, 0, w * 0.05, h * 0.09), p);
-
-    // Luminárias de teto
-    p.color = const Color(0xFFFFF8D0);
-    for (int i = 0; i < 3; i++) {
-      canvas.drawRect(
-        Rect.fromLTWH(i * (w * 0.35) + w * 0.02, h * 0.12, w * 0.28, h * 0.022),
-        p,
-      );
-    }
-    p.color = const Color(0xFFFFF8D0).withOpacity(0.10);
-    for (int i = 0; i < 3; i++) {
-      canvas.drawRect(
-        Rect.fromLTWH(i * (w * 0.35), h * 0.12, w * 0.32, h * 0.20),
-        p,
-      );
-    }
-
-    // ── Paredes ──
-    p.color = const Color(0xFFB0A888);
-    canvas.drawRect(Rect.fromLTWH(0, h * 0.18, w, h * 0.82), p);
-
-    // ── Estantes do fundo ──
-    _drawShelfSection(canvas, p, w, h,
-        left: 0,
-        top: h * 0.18,
-        width: w * 0.62,
-        height: h * 0.56,
-        rows: 5,
-        cols: 14,
-        seed: 0);
-
-    // Painel separador
-    p.color = const Color(0xFF5A3A10);
-    canvas.drawRect(Rect.fromLTWH(0, h * 0.18, w * 0.03, h * 0.56), p);
-    canvas.drawRect(Rect.fromLTWH(w * 0.62, h * 0.18, w * 0.025, h * 0.56), p);
-
-    // ── Chão (azulejo escuro reflexivo) ──
-    p.color = const Color(0xFF2A2A30);
-    canvas.drawRect(Rect.fromLTWH(0, h * 0.74, w, h * 0.26), p);
-    p.color = const Color(0xFF222228);
-    for (int r = 0; r < 6; r++) {
-      canvas.drawRect(Rect.fromLTWH(0, h * 0.74 + r * h * 0.045, w, 1), p);
-    }
-    for (int c = 0; c < 10; c++) {
-      canvas.drawRect(Rect.fromLTWH(c * (w / 10), h * 0.74, 1, h * 0.26), p);
-    }
-    p.color = Colors.white.withOpacity(0.05);
-    canvas.drawRect(Rect.fromLTWH(0, h * 0.74, w, h * 0.08), p);
-
-    // ── Mesa redonda + cadeiras ──
-    p.color = const Color(0xFF1A1A1A);
-    final List<Offset> chairs = [
-      Offset(w * 0.08, h * 0.72), Offset(w * 0.15, h * 0.72),
-      Offset(w * 0.08, h * 0.79), Offset(w * 0.15, h * 0.79),
-    ];
-    for (final cp in chairs) {
-      canvas.drawRect(Rect.fromLTWH(cp.dx - 12, cp.dy - 12, 22, 22), p);
-      canvas.drawRect(Rect.fromLTWH(cp.dx - 12, cp.dy - 22, 22, 10), p);
-    }
-    p.color = const Color(0xFF8B6914);
-    canvas.drawCircle(Offset(w * 0.115, h * 0.755), w * 0.065, p);
-    p.color = const Color(0xFF9A7820);
-    canvas.drawCircle(Offset(w * 0.115, h * 0.755), w * 0.060, p);
-
-    // ── Banco curvo (puf serpentiforme) ──
-    p.color = const Color(0xFFD4C090);
-    canvas.drawOval(
-      Rect.fromCenter(
-          center: Offset(w * 0.38, h * 0.88), width: w * 0.22, height: h * 0.07),
-      p,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-          center: Offset(w * 0.52, h * 0.93), width: w * 0.20, height: h * 0.06),
-      p,
-    );
-    p.color = const Color(0xFFBEAA78);
-    canvas.drawOval(
-      Rect.fromCenter(
-          center: Offset(w * 0.38, h * 0.88), width: w * 0.18, height: h * 0.05),
-      p,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-          center: Offset(w * 0.52, h * 0.93), width: w * 0.16, height: h * 0.04),
-      p,
-    );
-
-    // ── Banner "Biblioteca Virtual Pearson" ──
-    p.color = const Color(0xFF555550);
-    canvas.drawRect(Rect.fromLTWH(w * 0.60, h * 0.40, 6, h * 0.36), p);
-    p.color = const Color(0xFF1A3A8A);
-    canvas.drawRect(Rect.fromLTWH(w * 0.58, h * 0.20, w * 0.10, h * 0.22), p);
-    p.color = const Color(0xFF1E4AAA);
-    canvas.drawRect(Rect.fromLTWH(w * 0.585, h * 0.205, w * 0.09, h * 0.21), p);
-
-    // Ícone
-    p.color = Colors.white.withOpacity(0.9);
-    canvas.drawCircle(Offset(w * 0.630, h * 0.250), w * 0.018, p);
-
-    // Textos do banner
-    _drawText(canvas, 'Biblioteca', Offset(w * 0.630, h * 0.278),
-        const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold, fontFamily: 'PixelifySans'));
-    _drawText(canvas, 'Virtual', Offset(w * 0.630, h * 0.290),
-        const TextStyle(color: Colors.white, fontSize: 7, fontFamily: 'PixelifySans'));
-    _drawText(canvas, 'Pearson', Offset(w * 0.630, h * 0.302),
-        const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold, fontFamily: 'PixelifySans'));
-
-    // QR code (placeholder)
-    p.color = Colors.white;
-    canvas.drawRect(Rect.fromLTWH(w * 0.608, h * 0.36, w * 0.04, h * 0.04), p);
-    p.color = const Color(0xFF1A3A8A);
-    canvas.drawRect(Rect.fromLTWH(w * 0.612, h * 0.362, w * 0.032, h * 0.036), p);
-
-    // ── Estante direita (display de livros) ──
-    p.color = const Color(0xFF2A2A2A);
-    canvas.drawRect(Rect.fromLTWH(w * 0.70, h * 0.18, w * 0.30, h * 0.56), p);
-    p.color = const Color(0xFF5A3A10);
-    for (int row = 0; row < 5; row++) {
-      canvas.drawRect(
-        Rect.fromLTWH(w * 0.70, h * (0.18 + row * 0.11), w * 0.30, h * 0.015),
-        p,
-      );
-    }
-
-    // Livros na estante direita
-    final Random rng = Random(77);
-    for (int row = 0; row < 4; row++) {
-      for (int b = 0; b < 4; b++) {
-        p.color = _bookAt(row * 10 + b + 40);
-        double bx = w * 0.715 + b * (w * 0.065);
-        double by = h * (0.195 + row * 0.11);
-        canvas.drawRect(Rect.fromLTWH(bx, by, w * 0.050, h * 0.09), p);
-        p.color = p.color.withOpacity(0.6);
-        canvas.drawRect(Rect.fromLTWH(bx, by, w * 0.005, h * 0.09), p);
-        rng.nextInt(10);
-      }
-    }
-
-    // Placa "Sugestões de leitura"
-    p.color = const Color(0xFFE8E0D0);
-    canvas.drawRect(Rect.fromLTWH(w * 0.72, h * 0.18, w * 0.14, h * 0.04), p);
-    _drawText(canvas, 'Sugestões de leitura', Offset(w * 0.79, h * 0.20),
-        const TextStyle(color: Color(0xFF333333), fontSize: 6, fontFamily: 'PixelifySans'));
-
-    // Painel elétrico
-    p.color = const Color(0xFF606060);
-    canvas.drawRect(Rect.fromLTWH(w * 0.94, h * 0.30, w * 0.06, h * 0.15), p);
-    p.color = const Color(0xFFCC2200);
-    canvas.drawRect(Rect.fromLTWH(w * 0.95, h * 0.31, w * 0.04, h * 0.025), p);
-    _drawText(canvas, '⚡', Offset(w * 0.97, h * 0.35),
-        const TextStyle(color: Colors.yellow, fontSize: 12));
-  }
-
-  void _drawShelfSection(
-    Canvas canvas,
-    Paint p,
-    double w,
-    double h, {
-    required double left,
-    required double top,
-    required double width,
-    required double height,
-    required int rows,
-    required int cols,
-    required int seed,
-  }) {
-    p.color = const Color(0xFF5A3A10);
-    canvas.drawRect(Rect.fromLTWH(left, top, width, height), p);
-
-    final double shelfH = height / rows;
-    final double bookW = (width - 10) / cols;
-
-    for (int r = 0; r < rows; r++) {
-      p.color = const Color(0xFF6B4A1A);
-      canvas.drawRect(Rect.fromLTWH(left, top + r * shelfH, width, h * 0.012), p);
-
-      for (int c = 0; c < cols; c++) {
-        p.color = _bookAt(seed + r * cols + c);
-        final double bx = left + 4 + c * bookW;
-        final double by = top + r * shelfH + h * 0.015;
-        final double bh = shelfH - h * 0.02;
-        canvas.drawRect(Rect.fromLTWH(bx, by, bookW - 2, bh), p);
-        p.color = p.color.withOpacity(0.5);
-        canvas.drawRect(Rect.fromLTWH(bx, by, 2, bh), p);
-      }
-    }
-  }
-
-  void _drawText(Canvas canvas, String text, Offset center, TextStyle style) {
-    final tp = TextPainter(
-      text: TextSpan(text: text, style: style),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
-  }
+  const _BotaoDialogoCorujito({
+    required this.texto,
+    required this.onTap,
+    this.corBorda = Colors.cyanAccent,
+    this.corTexto = Colors.cyanAccent,
+    this.larguraFixa = true,
+  });
 
   @override
-  bool shouldRepaint(_) => false;
+  Widget build(BuildContext context) {
+    final botao = GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: larguraFixa ? double.infinity : null,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1F3A),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: corBorda, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.28),
+              blurRadius: 8,
+              offset: const Offset(3, 3),
+            ),
+          ],
+        ),
+        child: Text(
+          texto,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'PixelifySans',
+            fontSize: 12,
+            color: corTexto,
+            letterSpacing: 1,
+          ),
+        ),
+      ),
+    );
+
+    if (larguraFixa) return botao;
+    return IntrinsicWidth(child: botao);
+  }
 }

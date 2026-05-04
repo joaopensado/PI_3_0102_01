@@ -32,6 +32,7 @@ flutter:
     - assets/personagens/
     - assets/videos/
     - assets/audio/
+    - assets/biblioteca/
 
   fonts:
     - family: PixelifySans

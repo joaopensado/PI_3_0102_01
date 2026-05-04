@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:html' as html;
+import 'game_progress.dart';
 
 class TelaH15 extends StatefulWidget {
   @override
@@ -662,6 +663,7 @@ Future<void> _abrirMapa() async {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildBotaoAcao('IR PARA BIBLIOTECA', () {
+                        GameProgress.desbloquearBiblioteca();
                         Navigator.pushNamed(context, '/biblioteca');
                       }),
                       _buildBotaoAcao('EXPLORAR H15', () {
