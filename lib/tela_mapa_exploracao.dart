@@ -1,11 +1,23 @@
+// -----------------------------------------------------------------------------
+// Mapa de exploração principal. Recebe e mantém dados do jogador, como nome do
+// personagem e sprite, para serem usados nos mapas e diálogos.
+// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+// -----------------------------------------------------------------------------
+// ARQUIVO: tela_mapa_exploracao.dart
+// COMENTÁRIOS DO MAPA PRINCIPAL:
+// - Mostra o jogador andando pelo campus.
+// - Usa PlayerData.personagem para mostrar o sprite escolhido.
+// - A entrada no H15 depende da distância entre jogador e marcador do Pingo/H15.
+// -----------------------------------------------------------------------------
 import 'dart:html' as html;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+import 'player_data.dart';
 
 class TelaMapaExploracao extends StatefulWidget {
   @override
@@ -31,6 +43,7 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
   // 🔥 NOVO: dados do jogador
   String _personagem = 'assets/personagens/player-masc.png';
   String _nome = 'Jogador';
+  String _nomeSave = 'Save';
   bool _dadosCarregados = false;
 
   // 🔥 GEOLOCALIZAÇÃO
@@ -96,6 +109,7 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
 
   // ================= 🎯 CHEGOU =================
   void _verificarProximidade() {
+    // Libera a entrada no H15 quando o jogador está dentro do raio definido.
     if (_calcularDistancia() < 30) {
       Navigator.pushReplacementNamed(context, '/h15');
     }
@@ -161,7 +175,15 @@ class _TelaMapaExploracaoState extends State<TelaMapaExploracao> {
         save = args;
 
         _personagem = args['personagem'] ?? _personagem;
-        _nome = args['nome'] ?? _nome;
+        _nomeSave = args['nome'] ?? _nomeSave;
+        // Usa o nome do personagem no mapa, com fallback para o nome do save.
+        _nome = args['nomePersonagem'] ?? args['nome'] ?? _nome;
+
+        PlayerData.atualizar(
+          novoNomeSave: _nomeSave,
+          novoNomePersonagem: _nome,
+          novoPersonagem: _personagem,
+        );
 
         if (args['lat'] != null && args['lng'] != null) {
           _userLat = args['lat'];

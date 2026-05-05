@@ -1,8 +1,23 @@
+// -----------------------------------------------------------------------------
+// Área principal da biblioteca. Contém o Corujito, controla o diálogo dele,
+// libera a busca nas prateleiras após aceitar a missão e mostra as opções finais
+// depois que o livro é devolvido.
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// ARQUIVO: biblioteca_principal.dart
+// OBJETIVO: controlar a área principal da biblioteca, onde fica o Corujito.
+// COMENTÁRIOS DETALHADOS DA ÁREA PRINCIPAL:
+// - O Corujito abre diálogos diferentes dependendo do progresso do jogador.
+// - Depois de aceitar a missão, aparece o marcador para procurar o livro.
+// - Depois de achar o livro no acervo, o diálogo muda para devolução.
+// - Ao terminar, aparecem opções para ir à Praça de Alimentação ou voltar ao menu.
+// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'biblioteca_acervo.dart';
 import 'biblioteca_image_screen.dart';
 import 'game_progress.dart';
 import 'tela_inicial.dart';
+import 'player_data.dart';
 
 class BibliotecaPrincipalScreen extends StatefulWidget {
   const BibliotecaPrincipalScreen({super.key});
@@ -12,20 +27,30 @@ class BibliotecaPrincipalScreen extends StatefulWidget {
 }
 
 class _BibliotecaPrincipalScreenState extends State<BibliotecaPrincipalScreen> {
+  // Mostra o botão "PROCURAR" somente depois que a missão do Corujito for aceita
+  // e antes do livro ser encontrado/entregue.
+  // Controla se o botão PROCURAR aparece entre as prateleiras.
   bool _mostrarMarcadorPrateleiras = GameProgress.missaoCorujitoAceita &&
       !GameProgress.livroCorujitoEncontrado &&
       !GameProgress.livroCorujitoEntregue;
 
+  // Decide qual diálogo abrir com base no progresso atual:
+  // início, lembrete, devolução do livro ou diálogo finalizado.
+  // Abre o diálogo correto do Corujito conforme o estado da missão.
   Future<void> _abrirDialogoCorujito(BuildContext context) async {
     final String tipoDialogo;
 
     if (GameProgress.livroCorujitoEntregue) {
+      // Se a missão já terminou, mostra só fala final/recado.
       tipoDialogo = 'finalizado';
     } else if (GameProgress.livroCorujitoEncontrado) {
+      // Se o livro foi encontrado, abre diálogo para devolver o livro.
       tipoDialogo = 'devolucao';
     } else if (GameProgress.missaoCorujitoAceita) {
+      // Se a missão foi aceita, mas o livro ainda não foi encontrado, mostra lembrete.
       tipoDialogo = 'lembrete';
     } else {
+      // Primeira conversa com o Corujito.
       tipoDialogo = 'inicio';
     }
 
@@ -118,8 +143,13 @@ class _BibliotecaPrincipalScreenState extends State<BibliotecaPrincipalScreen> {
   }
 }
 
+// Estrutura simples para representar cada fala do diálogo.
+// personagem = quem fala; texto = conteúdo exibido na caixa.
+// Modelo simples para representar uma fala dentro do diálogo.
 class _FalaDialogo {
+  // Nome de quem está falando: JOGADOR ou CORUJITO.
   final String personagem;
+  // Texto exibido na caixa de diálogo.
   final String texto;
 
   const _FalaDialogo({
@@ -128,6 +158,9 @@ class _FalaDialogo {
   });
 }
 
+// Modal de diálogo do Corujito.
+// Controla avanço de falas, escolhas do jogador e opções finais.
+// Modal/dialog responsável por exibir as falas e opções do Corujito.
 class _DialogoCorujito extends StatefulWidget {
   final String tipoDialogo;
 
@@ -140,11 +173,16 @@ class _DialogoCorujito extends StatefulWidget {
 }
 
 class _DialogoCorujitoState extends State<_DialogoCorujito> {
-  static const String nomeJogador = 'Jogador';
+  // Usa o nome digitado na criação do personagem.
+  String get nomeJogador => PlayerData.nomePersonagem;
 
+  // Lista de falas que serão exibidas neste diálogo específico.
   late List<_FalaDialogo> _falas;
+  // Índice da fala atual dentro da lista _falas.
   int _indiceFala = 0;
+  // Mostra as opções aceitar/recusar a proposta do Corujito.
   bool _mostrarOpcoes = false;
+  // Mostra as opções finais: Praça de Alimentação ou Menu Principal.
   bool _mostrarOpcoesFinais = false;
   bool _fecharAoFinal = false;
   bool _marcarLivroEntregueAoFinal = false;
@@ -155,6 +193,8 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
     _configurarDialogoInicial();
   }
 
+  // Monta a lista de falas correta para o momento atual da missão.
+  // Escolhe qual conjunto de falas será usado ao abrir o diálogo.
   void _configurarDialogoInicial() {
     switch (widget.tipoDialogo) {
       case 'devolucao':
@@ -191,8 +231,9 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
     }
   }
 
+  // Falas da primeira conversa com o Corujito.
   List<_FalaDialogo> _falasInicio() {
-    return const [
+    return [
       _FalaDialogo(
         personagem: 'JOGADOR',
         texto: 'Oi Sr. Coruja! Finalmente te encontrei! Porque você está triste? Oque aconteceu?',
@@ -215,6 +256,7 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
     ];
   }
 
+  // Falas exibidas depois que o jogador aceita procurar o livro.
   List<_FalaDialogo> _falasAceitouMissao() {
     return const [
       _FalaDialogo(
@@ -229,6 +271,7 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
     ];
   }
 
+  // Falas exibidas quando o jogador volta com o livro encontrado.
   List<_FalaDialogo> _falasDevolucaoLivro() {
     return const [
       _FalaDialogo(
@@ -265,6 +308,8 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
     ];
   }
 
+  // Avança as falas e, no fim, abre opções ou fecha o diálogo conforme o estado.
+  // Avança para a próxima fala ou mostra opções quando chega ao fim.
   void _proximaFala() {
     if (_mostrarOpcoes || _mostrarOpcoesFinais) return;
 
@@ -296,6 +341,8 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
     }
   }
 
+  // Quando o jogador aceita, libera o marcador para procurar o livro no acervo.
+  // Jogador aceita a missão do Corujito.
   void _aceitarProposta() {
     GameProgress.aceitarMissaoCorujito();
 
@@ -307,10 +354,13 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
     });
   }
 
+  // Jogador recusa a missão; o diálogo fecha.
   void _recusarProposta() {
     Navigator.pop(context);
   }
 
+  // Opção final: para a música da biblioteca e segue para o próximo ambiente.
+  // Para o áudio da biblioteca e navega para a Praça de Alimentação.
   Future<void> _irParaPracaAlimentacao() async {
     await BibliotecaAudioController.parar();
     if (!mounted) return;
@@ -318,6 +368,7 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
     Navigator.pushNamed(context, '/refeitorio');
   }
 
+  // Para o áudio da biblioteca e volta para o menu principal.
   Future<void> _voltarMenuPrincipal() async {
     await BibliotecaAudioController.parar();
     if (!mounted) return;
@@ -329,8 +380,11 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
 
   @override
   Widget build(BuildContext context) {
+    // Pega a fala atual que deve aparecer na tela.
     final falaAtual = _falas[_indiceFala];
+    // Define se deve mostrar o retrato do Corujito ou o ícone do jogador.
     final bool falandoCorujito = falaAtual.personagem == 'CORUJITO';
+    final String nomeExibido = falandoCorujito ? 'CORUJITO' : PlayerData.nomePersonagem.toUpperCase();
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -402,7 +456,7 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
                         ),
                       ),
                       child: Text(
-                        falaAtual.personagem,
+                        nomeExibido,
                         style: TextStyle(
                           fontFamily: 'PixelifySans',
                           fontSize: 16,
@@ -496,7 +550,9 @@ class _DialogoCorujitoState extends State<_DialogoCorujito> {
   }
 }
 
+// Botão reutilizado nas escolhas e ações do diálogo do Corujito.
 class _BotaoDialogoCorujito extends StatelessWidget {
+  // Texto exibido na caixa de diálogo.
   final String texto;
   final VoidCallback onTap;
   final Color corBorda;

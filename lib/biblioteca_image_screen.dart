@@ -1,26 +1,43 @@
+// -----------------------------------------------------------------------------
+// Arquivo criado/ajustado para padronizar as telas da biblioteca.
+// Aqui ficam: áudio contínuo da biblioteca, botão de voltar ao menu, botão de
+// silenciar/ativar volume e o componente de marcador clicável usado nas cenas.
+// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'tela_inicial.dart';
 
 class BibliotecaAudioController {
+  // Player único/compartilhado para o áudio da biblioteca.
+  // Isso impede a música de reiniciar a cada troca de tela.
+  // Player único compartilhado por todas as telas da biblioteca.
   static final AudioPlayer _player = AudioPlayer();
+  // Evita iniciar a mesma música várias vezes ao trocar de tela.
   static bool _tocando = false;
+  // Guarda se o jogador silenciou ou ativou o som.
   static bool mutado = false;
 
+  // Inicia a música em loop somente se ela ainda não estiver tocando.
+  // Inicia a música da biblioteca. Se já estiver tocando, não faz nada.
   static Future<void> tocar() async {
     if (_tocando) return;
 
+    // Faz o áudio repetir em loop enquanto o jogador estiver na biblioteca.
     await _player.setReleaseMode(ReleaseMode.loop);
     await _player.setVolume(mutado ? 0.0 : 1.0);
+    // Toca o arquivo de áudio cadastrado nos assets do Flutter.
     await _player.play(AssetSource('audio/audio_biblioteca.mp3'));
     _tocando = true;
   }
 
+  // Alterna entre som ligado e som mutado no botão do canto superior.
   static Future<void> alternarSom() async {
     mutado = !mutado;
     await _player.setVolume(mutado ? 0.0 : 1.0);
   }
 
+  // Para o áudio ao sair da biblioteca para o menu ou outro ambiente.
+  // Para a música quando o jogador sai da biblioteca e volta ao menu.
   static Future<void> parar() async {
     if (!_tocando) return;
     await _player.stop();
@@ -29,6 +46,9 @@ class BibliotecaAudioController {
   }
 }
 
+// Componente base reutilizado nas telas da biblioteca.
+// Ele evita repetir o mesmo código de fundo, áudio, botões e caixa de texto.
+// Widget base usado por todas as telas de imagem da biblioteca.
 class BibliotecaSceneScaffold extends StatefulWidget {
   final String imageAsset;
   final String titulo;
@@ -39,11 +59,13 @@ class BibliotecaSceneScaffold extends StatefulWidget {
 
   const BibliotecaSceneScaffold({
     super.key,
+    // Caminho da imagem de fundo da tela atual.
     required this.imageAsset,
     required this.titulo,
     required this.descricao,
     required this.dicaRodape,
     this.mostrarCaixaInformacao = true,
+    // Função opcional para desenhar itens clicáveis por cima da imagem.
     this.overlayBuilder,
   });
 
@@ -57,6 +79,7 @@ class _BibliotecaSceneScaffoldState extends State<BibliotecaSceneScaffold> {
   @override
   void initState() {
     super.initState();
+    // Ao entrar em qualquer tela da biblioteca, garante que o áudio está tocando.
     BibliotecaAudioController.tocar();
   }
 
@@ -68,6 +91,7 @@ class _BibliotecaSceneScaffoldState extends State<BibliotecaSceneScaffold> {
     });
   }
 
+  // Volta para o menu inicial e para a música da biblioteca.
   Future<void> _voltarMenuInicial() async {
     await BibliotecaAudioController.parar();
     if (!mounted) return;
@@ -107,6 +131,7 @@ class _BibliotecaSceneScaffoldState extends State<BibliotecaSceneScaffold> {
             fit: StackFit.expand,
             children: [
               Positioned.fill(
+                // Desenha a imagem de fundo ocupando toda a tela.
                 child: Image.asset(
                   widget.imageAsset,
                   fit: BoxFit.cover,
@@ -114,6 +139,7 @@ class _BibliotecaSceneScaffoldState extends State<BibliotecaSceneScaffold> {
                   isAntiAlias: false,
                 ),
               ),
+              // Desenha elementos extras por cima da imagem, como Corujito ou marcadores.
               if (widget.overlayBuilder != null) widget.overlayBuilder!(context, size),
               Positioned(
                 top: 40,
@@ -192,6 +218,9 @@ class _BibliotecaSceneScaffoldState extends State<BibliotecaSceneScaffold> {
   }
 }
 
+// Marcador clicável usado para indicar onde o jogador deve tocar para avançar
+// entre as cenas da biblioteca.
+// Marcador clicável usado para indicar onde o jogador deve clicar/entrar.
 class BibliotecaIndicadorEntrada extends StatelessWidget {
   final double leftFactor;
   final double topFactor;

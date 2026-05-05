@@ -1,8 +1,19 @@
+// -----------------------------------------------------------------------------
+// Arquivo de rotas principais do app. A rota /mapa_biblioteca leva para a tela
+// de geolocalização criada para acessar a biblioteca.
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// ARQUIVO: main.dart
+// COMENTÁRIO SOBRE ROTAS DA BIBLIOTECA:
+// A rota /biblioteca abre a primeira tela do ambiente da biblioteca.
+// A rota /mapa_biblioteca abre o mapa/geolocalização antes da entrada.
+// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'tela_inicial.dart';
 import 'tela_h15.dart';
 import 'arquiteturaOUT.dart';
 import 'tela_mapa_exploracao.dart';
+import 'tela_mapa_biblioteca.dart';
 import 'entradaManacas.dart';
 import 'pracaalimentacao.dart';
 import 'biblioteca_fachada.dart';
@@ -26,7 +37,12 @@ class MyApp extends StatelessWidget {
       routes: {
         '/h15': (context) => TelaH15(),
         '/mapa': (context) => TelaMapaExploracao(),
+        // Mapa/geolocalização específico para acessar a biblioteca.
+        // Rota chamada depois do H15/Pingo para abrir o mapa da biblioteca.
+        '/mapa_biblioteca': (context) => const TelaMapaBiblioteca(),
         '/h12': (context) => TelaArquiteturaOUT(),
+        // Primeira cena interna da biblioteca, aberta após clicar na Corujita no mapa.
+        // Rota chamada quando o jogador finalmente entra no ambiente da biblioteca.
         '/biblioteca': (context) => BibliotecaFachadaScreen(),
         '/refeitorio': (context) => Telapracaalimentacao(),
         '/manacas': (context) => EntradaScreen(),

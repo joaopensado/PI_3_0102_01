@@ -1,3 +1,19 @@
+// -----------------------------------------------------------------------------
+// Cena do acervo da biblioteca. Aqui acontece o mini game do livro perdido:
+// o jogador investiga 4 corredores, coleta 4 partes da capa e monta o puzzle
+// do livro "O Segredo dos Animais".
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// ARQUIVO: biblioteca_acervo.dart
+// OBJETIVO: controlar o mini game do acervo da biblioteca.
+// O jogador investiga 4 corredores, coleta 4 pedaços da capa e depois monta
+// o puzzle do livro "O Segredo dos Animais".
+// COMENTÁRIOS DETALHADOS DO ACERVO:
+// - _pedacosColetados guarda quais partes já foram encontradas.
+// - _investigarCorredor abre o popup de coleta de cada pedaço.
+// - _PuzzleLivroDialog é a janela onde o jogador arrasta as peças.
+// - Quando a capa é montada corretamente, o jogo marca o livro como encontrado.
+// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'biblioteca_image_screen.dart';
 import 'game_progress.dart';
@@ -10,10 +26,17 @@ class BibliotecaAcervoScreen extends StatefulWidget {
 }
 
 class _BibliotecaAcervoScreenState extends State<BibliotecaAcervoScreen> {
+  // Guarda quais corredores já foram investigados e quais partes da capa já foram coletadas.
+  // Guarda os números dos pedaços já encontrados nos corredores.
   final Set<int> _pedacosColetados = <int>{};
+  // Impede abrir o puzzle duas vezes ao mesmo tempo.
   bool _puzzleAberto = false;
 
+  // Ao clicar em um corredor, entrega uma parte da capa correspondente.
+  // Se o corredor já foi usado, apenas informa que ele já foi investigado.
+  // Método chamado quando o jogador clica em um corredor.
   void _investigarCorredor(int numero) {
+    // Se o pedaço desse corredor já foi pego, mostra aviso em vez de coletar de novo.
     if (_pedacosColetados.contains(numero)) {
       _mostrarAviso(
         titulo: 'CORREDOR JÁ INVESTIGADO',
@@ -23,6 +46,7 @@ class _BibliotecaAcervoScreenState extends State<BibliotecaAcervoScreen> {
     }
 
     setState(() {
+      // Adiciona o pedaço encontrado no conjunto de coletados.
       _pedacosColetados.add(numero);
     });
 
@@ -146,6 +170,8 @@ class _BibliotecaAcervoScreenState extends State<BibliotecaAcervoScreen> {
     );
   }
 
+  // Abre o puzzle depois que as 4 partes da capa foram coletadas.
+  // Abre a janela do quebra-cabeça quando os 4 pedaços foram coletados.
   Future<void> _abrirPuzzle() async {
     if (_puzzleAberto) return;
     _puzzleAberto = true;
@@ -155,6 +181,7 @@ class _BibliotecaAcervoScreenState extends State<BibliotecaAcervoScreen> {
       barrierDismissible: false,
       builder: (_) => _PuzzleLivroDialog(
         onConcluido: () {
+          // Marca globalmente que o livro foi encontrado, para liberar o diálogo de devolução.
           GameProgress.marcarLivroCorujitoEncontrado();
           Navigator.pop(context); // fecha o puzzle
           Navigator.pop(context); // volta para o Corujito
@@ -173,6 +200,7 @@ class _BibliotecaAcervoScreenState extends State<BibliotecaAcervoScreen> {
       descricao: '',
       dicaRodape: '',
       mostrarCaixaInformacao: false,
+      // overlayBuilder desenha os elementos clicáveis por cima da imagem do acervo.
       overlayBuilder: (context, size) {
         return Stack(
           children: [
@@ -263,13 +291,18 @@ class _BibliotecaAcervoScreenState extends State<BibliotecaAcervoScreen> {
   }
 }
 
+// Botão visual de cada corredor do acervo.
+// O design mostra se o corredor ainda precisa ser investigado ou se já foi coletado.
+// Widget visual de cada corredor clicável do acervo.
 class _CorredorBiblioteca extends StatelessWidget {
   final int numero;
   final double left;
   final double top;
   final double width;
   final double height;
+  // Indica se o jogador já pegou a peça deste corredor.
   final bool coletado;
+  // Função executada quando o jogador clica no corredor.
   final VoidCallback onTap;
 
   const _CorredorBiblioteca({
@@ -284,6 +317,7 @@ class _CorredorBiblioteca extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Verde quando já foi coletado; ciano quando ainda precisa investigar.
     final Color destaque = coletado ? Colors.greenAccent : Colors.cyanAccent;
 
     return Positioned(
@@ -419,6 +453,8 @@ class _CorredorBiblioteca extends StatelessWidget {
   }
 }
 
+// Janela do mini game de montar a capa do livro.
+// Janela/modal do puzzle onde o jogador monta a capa do livro.
 class _PuzzleLivroDialog extends StatefulWidget {
   final VoidCallback onConcluido;
 
@@ -429,11 +465,16 @@ class _PuzzleLivroDialog extends StatefulWidget {
 }
 
 class _PuzzleLivroDialogState extends State<_PuzzleLivroDialog> {
+  // Peças começam embaralhadas para o jogador precisar reorganizar.
   final List<int> _pecasDisponiveis = <int>[3, 1, 4, 2];
+  // Slots do tabuleiro; null significa que aquele espaço ainda está vazio.
   final List<int?> _slots = <int?>[null, null, null, null];
 
   String _assetPeca(int numero) => 'assets/biblioteca/livro_segredo_animais_pedaco_$numero.png';
 
+  // A ordem correta é: 1, 2, 3, 4.
+  // Quando todos os slots batem com essa ordem, o livro é considerado encontrado.
+  // Verifica se as peças estão na ordem correta: 1, 2, 3, 4.
   bool get _montadoCorretamente {
     for (int i = 0; i < 4; i++) {
       if (_slots[i] != i + 1) return false;
@@ -441,6 +482,8 @@ class _PuzzleLivroDialogState extends State<_PuzzleLivroDialog> {
     return true;
   }
 
+  // Coloca uma peça no slot. Se já existia peça ali, ela volta para o banco.
+  // Coloca uma peça arrastada no slot escolhido.
   void _colocarPeca(int indiceSlot, int numeroPeca) {
     setState(() {
       final pecaAntiga = _slots[indiceSlot];
@@ -452,6 +495,7 @@ class _PuzzleLivroDialogState extends State<_PuzzleLivroDialog> {
     });
   }
 
+  // Remove uma peça do tabuleiro e devolve para o banco de peças.
   void _removerPeca(int indiceSlot) {
     setState(() {
       final peca = _slots[indiceSlot];
@@ -567,6 +611,7 @@ class _PuzzleLivroDialogState extends State<_PuzzleLivroDialog> {
     );
   }
 
+  // Monta o quadro 2x2 onde a capa deve ser reconstruída.
   Widget _buildTabuleiro() {
     return Container(
       padding: const EdgeInsets.all(10),
@@ -584,6 +629,7 @@ class _PuzzleLivroDialogState extends State<_PuzzleLivroDialog> {
     );
   }
 
+  // Cria cada espaço que aceita uma peça arrastada.
   Widget _buildSlot(int indice) {
     final peca = _slots[indice];
     return DragTarget<int>(
@@ -627,6 +673,7 @@ class _PuzzleLivroDialogState extends State<_PuzzleLivroDialog> {
     );
   }
 
+  // Mostra as peças disponíveis para arrastar.
   Widget _buildBancoDePecas() {
     return Container(
       width: 300,
@@ -711,6 +758,7 @@ class _PuzzleLivroDialogState extends State<_PuzzleLivroDialog> {
 
 class _BotaoAcervo extends StatelessWidget {
   final String texto;
+  // Função executada quando o jogador clica no corredor.
   final VoidCallback onTap;
 
   const _BotaoAcervo({

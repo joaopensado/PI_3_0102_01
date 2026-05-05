@@ -1,8 +1,19 @@
+// -----------------------------------------------------------------------------
+// Ambiente H15/Pingo. Foi ajustado para liberar a biblioteca no progresso global
+// e enviar o jogador para o mapa de geolocalização da biblioteca.
+// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+// -----------------------------------------------------------------------------
+// ARQUIVO: tela_h15.dart
+// COMENTÁRIOS DAS ALTERAÇÕES NA H15:
+// - Ao terminar a etapa do Pingo/H15, a biblioteca é desbloqueada.
+// - O botão que antes ia direto para a biblioteca agora pode abrir o mapa da biblioteca.
+// - A geolocalização continua sendo usada para o ambiente H15.
+// -----------------------------------------------------------------------------
 import 'dart:html' as html;
 import 'game_progress.dart';
 
@@ -662,9 +673,14 @@ Future<void> _abrirMapa() async {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      // Ao aceitar seguir a missão, libera a biblioteca e abre o mapa
+                      // de geolocalização da biblioteca, não a cena interna diretamente.
                       _buildBotaoAcao('IR PARA BIBLIOTECA', () {
+                        // Libera o acesso à biblioteca no progresso global do jogo.
                         GameProgress.desbloquearBiblioteca();
-                        Navigator.pushNamed(context, '/biblioteca');
+                        _musicPlayer.stop();
+                        // Abre o mapa/geolocalização da biblioteca em vez de entrar direto.
+                        Navigator.pushNamed(context, '/mapa_biblioteca');
                       }),
                       _buildBotaoAcao('EXPLORAR H15', () {
                         ScaffoldMessenger.of(context).showSnackBar(

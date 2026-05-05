@@ -1,3 +1,8 @@
+// -----------------------------------------------------------------------------
+// Tela inicial/menu. Foram adicionados: nome do personagem no novo jogo,
+// armazenamento do personagem escolhido e bloqueio visual da biblioteca antes
+// de passar pelo H15.
+// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'tela_h15.dart';
@@ -5,7 +10,15 @@ import 'arquiteturaOUT.dart';
 import 'creditos.dart';
 import 'game_progress.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// -----------------------------------------------------------------------------
+// ARQUIVO: tela_inicial.dart
+// COMENTÁRIOS DAS ALTERAÇÕES:
+// - Novo jogo agora pede nome do save e nome do personagem.
+// - O nome do personagem é salvo em PlayerData para aparecer nos diálogos.
+// - O botão da biblioteca pode ficar bloqueado até o jogador passar pelo H15.
+// -----------------------------------------------------------------------------
 import 'dart:convert';
+import 'player_data.dart';
 
 class TelaInicial extends StatefulWidget {
   @override
@@ -43,6 +56,8 @@ class _TelaInicialState extends State<TelaInicial> {
     Navigator.pushNamed(context, rota);
   }
 
+  // Fluxo novo do save: primeiro pede o nome do save, depois o nome do personagem
+  // e por último a aparência/sprite do jogador.
   Future<void> _iniciarNovoJogo(BuildContext context) async {
     if (!mounted) return;
 
@@ -50,11 +65,22 @@ class _TelaInicialState extends State<TelaInicial> {
 
     if (nome == null || nome.isEmpty) return;
 
+    final nomePersonagem = await _dialogNomePersonagem(context);
+
+    if (nomePersonagem == null || nomePersonagem.isEmpty) return;
+
     final personagem = await _dialogPersonagem(context);
 
     if (personagem == null) return;
 
-    await _salvarJogo(nome, personagem);
+    await _salvarJogo(nome, nomePersonagem, personagem);
+
+    // Atualiza os dados globais do jogador para outras telas usarem.
+      PlayerData.atualizar(
+      novoNomeSave: nome,
+      novoNomePersonagem: nomePersonagem,
+      novoPersonagem: personagem,
+    );
 
     await _player.stop();
 
@@ -63,6 +89,7 @@ class _TelaInicialState extends State<TelaInicial> {
       '/mapa',
       arguments: {
         'nome': nome,
+        'nomePersonagem': nomePersonagem,
         'personagem': personagem,
       },
     );
@@ -98,7 +125,7 @@ class _TelaInicialState extends State<TelaInicial> {
                   controller: controller,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: "Digite seu nome...",
+                    hintText: "Digite o nome do save...",
                     hintStyle: TextStyle(color: Colors.white54),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.cyanAccent),
@@ -109,6 +136,81 @@ class _TelaInicialState extends State<TelaInicial> {
                 _buildBotaoPixel(
                   "CONFIRMAR",
                   () => Navigator.pop(context, controller.text),
+                  true,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String?> _dialogNomePersonagem(BuildContext context) async {
+    TextEditingController controller = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Color(0xFF0A0E27),
+              border: Border.all(color: Colors.cyanAccent, width: 3),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.45),
+                  blurRadius: 18,
+                  offset: Offset(6, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "NOME DO PERSONAGEM",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    color: Colors.cyanAccent,
+                    fontSize: 16,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Esse nome vai aparecer nos diálogos do jogo.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontFamily: 'PixelifySans',
+                  ),
+                ),
+                SizedBox(height: 15),
+                TextField(
+                  controller: controller,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: "Digite o nome do personagem...",
+                    hintStyle: TextStyle(color: Colors.white54),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.cyanAccent),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.cyanAccent, width: 2),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                _buildBotaoPixel(
+                  "CONFIRMAR",
+                  () => Navigator.pop(context, controller.text.trim()),
                   true,
                 ),
               ],
@@ -210,7 +312,8 @@ class _TelaInicialState extends State<TelaInicial> {
     );
   }
 
-  Future<void> _salvarJogo(String nome, String personagem) async {
+  // Salva nome do save, nome do personagem e sprite escolhido no SharedPreferences.
+  Future<void> _salvarJogo(String nome, String nomePersonagem, String personagem) async {
     final prefs = await SharedPreferences.getInstance();
 
     final dados = prefs.getString('saves');
@@ -222,6 +325,7 @@ class _TelaInicialState extends State<TelaInicial> {
 
     saves.add({
       'nome': nome,
+      'nomePersonagem': nomePersonagem,
       'personagem': personagem,
       'fase': '/mapa',
       'lat': null,
@@ -282,15 +386,29 @@ class _TelaInicialState extends State<TelaInicial> {
 
                         SizedBox(width: 10),
 
-                        // 📛 NOME
+                        // 📛 NOME DO SAVE + PERSONAGEM
                         Expanded(
-                          child: Text(
-                            save['nome'],
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'PixelifySans',
-                              fontSize: 14,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                save['nome'] ?? 'Save sem nome',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'PixelifySans',
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Personagem: ${save["nomePersonagem"] ?? save["nome"] ?? "Jogador"}',
+                                style: TextStyle(
+                                  color: Colors.cyanAccent,
+                                  fontFamily: 'PixelifySans',
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
@@ -300,6 +418,8 @@ class _TelaInicialState extends State<TelaInicial> {
                           cor: Colors.blue.shade400,
                           onTap: () async {
                             Navigator.pop(context);
+
+                            PlayerData.carregarDeSave(save);
 
                             await _player.stop();
 
@@ -460,7 +580,7 @@ class _TelaInicialState extends State<TelaInicial> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("EDITAR NOME", style: TextStyle(color: Colors.cyanAccent)),
+                Text("EDITAR NOME DO SAVE", style: TextStyle(color: Colors.cyanAccent)),
                 SizedBox(height: 10),
                 TextField(
                   controller: controller,
@@ -497,6 +617,7 @@ class _TelaInicialState extends State<TelaInicial> {
     final prefs = await SharedPreferences.getInstance();
 
     final nome = prefs.getString('nome');
+    final nomePersonagem = prefs.getString('nomePersonagem') ?? nome;
     final personagem = prefs.getString('personagem');
 
     if (nome == null || personagem == null) {
@@ -511,16 +632,26 @@ class _TelaInicialState extends State<TelaInicial> {
 
     await _player.stop();
 
+    // Atualiza os dados globais do jogador para outras telas usarem.
+      PlayerData.atualizar(
+      novoNomeSave: nome,
+      novoNomePersonagem: nomePersonagem,
+      novoPersonagem: personagem,
+    );
+
     Navigator.pushNamed(
       context,
       '/mapa',
       arguments: {
         'nome': nome,
+        'nomePersonagem': nomePersonagem,
         'personagem': personagem,
       },
     );
   }
 
+  // Mini tela exibida quando o jogador tenta abrir a biblioteca antes de passar pelo H15.
+  // Mostra uma janela bonita quando a biblioteca ainda está bloqueada.
   void _mostrarBibliotecaBloqueadaDialogo() {
     showDialog(
       context: context,
@@ -755,6 +886,7 @@ class _TelaInicialState extends State<TelaInicial> {
                 }, true),
                 SizedBox(height: 10),
                 _buildBotaoPixel(
+                    // A biblioteca só fica disponível no menu depois que o H15/Pingo libera.
                     GameProgress.bibliotecaDesbloqueada
                         ? "BIBLIOTECA"
                         : "BIBLIOTECA 🔒", () {
@@ -763,7 +895,7 @@ class _TelaInicialState extends State<TelaInicial> {
                     return;
                   }
                   Navigator.pop(context);
-                  _navegarPara(context, '/biblioteca');
+                  _navegarPara(context, '/mapa_biblioteca');
                 }, true),
                 SizedBox(height: 10),
                 _buildBotaoPixel("PRAÇA", () {
