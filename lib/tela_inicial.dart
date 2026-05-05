@@ -1,8 +1,3 @@
-// -----------------------------------------------------------------------------
-// Tela inicial/menu. Foram adicionados: nome do personagem no novo jogo,
-// armazenamento do personagem escolhido e bloqueio visual da biblioteca antes
-// de passar pelo H15.
-// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'tela_h15.dart';
@@ -10,13 +5,6 @@ import 'arquiteturaOUT.dart';
 import 'creditos.dart';
 import 'game_progress.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// -----------------------------------------------------------------------------
-// ARQUIVO: tela_inicial.dart
-// COMENTÁRIOS DAS ALTERAÇÕES:
-// - Novo jogo agora pede nome do save e nome do personagem.
-// - O nome do personagem é salvo em PlayerData para aparecer nos diálogos.
-// - O botão da biblioteca pode ficar bloqueado até o jogador passar pelo H15.
-// -----------------------------------------------------------------------------
 import 'dart:convert';
 import 'player_data.dart';
 
@@ -28,7 +16,7 @@ class TelaInicial extends StatefulWidget {
 class _TelaInicialState extends State<TelaInicial> {
   int etapa = 0;
   final AudioPlayer _player = AudioPlayer();
-  bool _mutado = false; // NOVO: controle de mute
+  bool _mutado = false;
 
   @override
   void initState() {
@@ -42,7 +30,6 @@ class _TelaInicialState extends State<TelaInicial> {
     await _player.play(AssetSource('audio/somtelainicial.mp3'));
   }
 
-  // NOVO: alterna entre mute e unmute
   Future<void> _alternarMute() async {
     setState(() {
       _mutado = !_mutado;
@@ -50,14 +37,11 @@ class _TelaInicialState extends State<TelaInicial> {
     await _player.setVolume(_mutado ? 0.0 : 1.0);
   }
 
-  // Para o áudio e navega para a rota
   Future<void> _navegarPara(BuildContext context, String rota) async {
     await _player.stop();
     Navigator.pushNamed(context, rota);
   }
 
-  // Fluxo novo do save: primeiro pede o nome do save, depois o nome do personagem
-  // e por último a aparência/sprite do jogador.
   Future<void> _iniciarNovoJogo(BuildContext context) async {
     if (!mounted) return;
 
@@ -76,7 +60,7 @@ class _TelaInicialState extends State<TelaInicial> {
     await _salvarJogo(nome, nomePersonagem, personagem);
 
     // Atualiza os dados globais do jogador para outras telas usarem.
-      PlayerData.atualizar(
+    PlayerData.atualizar(
       novoNomeSave: nome,
       novoNomePersonagem: nomePersonagem,
       novoPersonagem: personagem,
@@ -203,7 +187,8 @@ class _TelaInicialState extends State<TelaInicial> {
                       borderSide: BorderSide(color: Colors.cyanAccent),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.cyanAccent, width: 2),
+                      borderSide:
+                          BorderSide(color: Colors.cyanAccent, width: 2),
                     ),
                   ),
                 ),
@@ -313,7 +298,8 @@ class _TelaInicialState extends State<TelaInicial> {
   }
 
   // Salva nome do save, nome do personagem e sprite escolhido no SharedPreferences.
-  Future<void> _salvarJogo(String nome, String nomePersonagem, String personagem) async {
+  Future<void> _salvarJogo(
+      String nome, String nomePersonagem, String personagem) async {
     final prefs = await SharedPreferences.getInstance();
 
     final dados = prefs.getString('saves');
@@ -339,14 +325,11 @@ class _TelaInicialState extends State<TelaInicial> {
     final prefs = await SharedPreferences.getInstance();
     final dados = prefs.getString('saves');
 
-    if (dados == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nenhum save encontrado')),
-      );
-      return;
-    }
+    List saves = [];
 
-    List saves = jsonDecode(dados);
+    if (dados != null) {
+      saves = jsonDecode(dados);
+    }
 
     showDialog(
       context: context,
@@ -367,92 +350,113 @@ class _TelaInicialState extends State<TelaInicial> {
                   ),
                 ),
                 SizedBox(height: 20),
-                ...List.generate(saves.length, (index) {
-                  final save = saves[index];
-
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 10),
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.cyanAccent),
-                    ),
-                    child: Row(
+                if (saves.isEmpty)
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Column(
                       children: [
-                        // 👤 PERSONAGEM
-                        Image.asset(
-                          save['personagem'],
-                          width: 40,
-                        ),
-
-                        SizedBox(width: 10),
-
-                        // 📛 NOME DO SAVE + PERSONAGEM
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                save['nome'] ?? 'Save sem nome',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'PixelifySans',
-                                  fontSize: 14,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Personagem: ${save["nomePersonagem"] ?? save["nome"] ?? "Jogador"}',
-                                style: TextStyle(
-                                  color: Colors.cyanAccent,
-                                  fontFamily: 'PixelifySans',
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ],
+                        Icon(Icons.folder_open,
+                            color: Colors.white38, size: 40),
+                        SizedBox(height: 15),
+                        Text(
+                          "Nenhum save salvo ainda",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontFamily: 'PixelifySans',
+                            fontSize: 12,
                           ),
-                        ),
-
-                        // ▶️ JOGAR
-                        _botaoAcao(
-                          icon: Icons.play_arrow,
-                          cor: Colors.blue.shade400,
-                          onTap: () async {
-                            Navigator.pop(context);
-
-                            PlayerData.carregarDeSave(save);
-
-                            await _player.stop();
-
-                            Navigator.pushNamed(
-                              this.context,
-                              save['fase'],
-                              arguments: save,
-                            );
-                          },
-                        ),
-
-                        // ✏️ EDITAR
-                        _botaoAcao(
-                          icon: Icons.edit,
-                          cor: Colors.greenAccent,
-                          onTap: () {
-                            Navigator.pop(context);
-                            _editarSave(index, save);
-                          },
-                        ),
-
-                        // 🗑️ DELETAR
-                        _botaoAcao(
-                          icon: Icons.delete,
-                          cor: Colors.cyanAccent,
-                          onTap: () {
-                            _confirmarDeletarSave(index);
-                          },
                         ),
                       ],
                     ),
-                  );
-                }),
+                  )
+                else
+                  ...List.generate(saves.length, (index) {
+                    final save = saves[index];
+
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 10),
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.cyanAccent),
+                      ),
+                      child: Row(
+                        children: [
+                          // 👤 PERSONAGEM
+                          Image.asset(
+                            save['personagem'],
+                            width: 40,
+                          ),
+
+                          SizedBox(width: 10),
+
+                          // 📛 NOME DO SAVE + PERSONAGEM
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  save['nome'] ?? 'Save sem nome',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontFamily: 'PixelifySans',
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Personagem: ${save["nomePersonagem"] ?? save["nome"] ?? "Jogador"}',
+                                  style: TextStyle(
+                                    color: Colors.cyanAccent,
+                                    fontFamily: 'PixelifySans',
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // ▶️ JOGAR
+                          _botaoAcao(
+                            icon: Icons.play_arrow,
+                            cor: Colors.blue.shade400,
+                            onTap: () async {
+                              Navigator.pop(context);
+
+                              PlayerData.carregarDeSave(save);
+
+                              await _player.stop();
+
+                              Navigator.pushNamed(
+                                this.context,
+                                save['fase'],
+                                arguments: save,
+                              );
+                            },
+                          ),
+
+                          // ✏️ EDITAR
+                          _botaoAcao(
+                            icon: Icons.edit,
+                            cor: Colors.greenAccent,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _editarSave(index, save);
+                            },
+                          ),
+
+                          // 🗑️ DELETAR
+                          _botaoAcao(
+                            icon: Icons.delete,
+                            cor: Colors.cyanAccent,
+                            onTap: () {
+                              _confirmarDeletarSave(index);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 SizedBox(height: 10),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
@@ -580,7 +584,8 @@ class _TelaInicialState extends State<TelaInicial> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("EDITAR NOME DO SAVE", style: TextStyle(color: Colors.cyanAccent)),
+                Text("EDITAR NOME DO SAVE",
+                    style: TextStyle(color: Colors.cyanAccent)),
                 SizedBox(height: 10),
                 TextField(
                   controller: controller,
@@ -611,43 +616,6 @@ class _TelaInicialState extends State<TelaInicial> {
     await prefs.setString('saves', jsonEncode(saves));
 
     _mostrarSaves(context);
-  }
-
-  Future<void> _continuarJogo(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final nome = prefs.getString('nome');
-    final nomePersonagem = prefs.getString('nomePersonagem') ?? nome;
-    final personagem = prefs.getString('personagem');
-
-    if (nome == null || personagem == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Nenhum save encontrado!'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    await _player.stop();
-
-    // Atualiza os dados globais do jogador para outras telas usarem.
-      PlayerData.atualizar(
-      novoNomeSave: nome,
-      novoNomePersonagem: nomePersonagem,
-      novoPersonagem: personagem,
-    );
-
-    Navigator.pushNamed(
-      context,
-      '/mapa',
-      arguments: {
-        'nome': nome,
-        'nomePersonagem': nomePersonagem,
-        'personagem': personagem,
-      },
-    );
   }
 
   // Mini tela exibida quando o jogador tenta abrir a biblioteca antes de passar pelo H15.
