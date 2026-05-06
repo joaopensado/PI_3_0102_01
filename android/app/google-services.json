@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "679852745198",
+    "project_id": "projeto-integrador-jogo-rpg",
+    "storage_bucket": "projeto-integrador-jogo-rpg.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:679852745198:android:b7a5a7e04b11d1ce19aeff",
+        "android_client_info": {
+          "package_name": "com.example.arquivocapivara_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3mXBOhzrKvX-b5qeK5BzEWzB2LrcoeVA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
