@@ -7,6 +7,7 @@ import 'game_progress.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'player_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TelaInicial extends StatefulWidget {
   @override
@@ -297,39 +298,31 @@ class _TelaInicialState extends State<TelaInicial> {
     );
   }
 
-  // Salva nome do save, nome do personagem e sprite escolhido no SharedPreferences.
   Future<void> _salvarJogo(
-      String nome, String nomePersonagem, String personagem) async {
-    final prefs = await SharedPreferences.getInstance();
+    String nome,
+    String nomePersonagem,
+    String personagem,
+  ) async {
+    final firestore = FirebaseFirestore.instance;
 
-    final dados = prefs.getString('saves');
-    List saves = [];
-
-    if (dados != null) {
-      saves = jsonDecode(dados);
-    }
-
-    saves.add({
+    await firestore.collection('saves').add({
       'nome': nome,
       'nomePersonagem': nomePersonagem,
       'personagem': personagem,
       'fase': '/mapa',
       'lat': null,
       'lng': null,
+      'progresso': [],
+      'criadoEm': FieldValue.serverTimestamp(),
     });
-
-    await prefs.setString('saves', jsonEncode(saves));
   }
 
-  Future<void> _mostrarSaves(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    final dados = prefs.getString('saves');
+  Future<void> _mostrarSavesFirebase(BuildContext context) async {
+    final firestore = FirebaseFirestore.instance;
 
-    List saves = [];
+    final snapshot = await firestore.collection('saves').get();
 
-    if (dados != null) {
-      saves = jsonDecode(dados);
-    }
+    final saves = snapshot.docs;
 
     showDialog(
       context: context,
@@ -342,7 +335,7 @@ class _TelaInicialState extends State<TelaInicial> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "SEUS SAVES",
+                  "SAVES",
                   style: TextStyle(
                     fontFamily: 'PixelifySans',
                     color: Colors.cyanAccent,
@@ -355,24 +348,22 @@ class _TelaInicialState extends State<TelaInicial> {
                     padding: EdgeInsets.symmetric(vertical: 20),
                     child: Column(
                       children: [
-                        Icon(Icons.folder_open,
-                            color: Colors.white38, size: 40),
+                        Icon(Icons.cloud_off, color: Colors.white38, size: 40),
                         SizedBox(height: 15),
                         Text(
-                          "Nenhum save salvo ainda",
-                          textAlign: TextAlign.center,
+                          "Nenhum save na nuvem",
                           style: TextStyle(
                             color: Colors.white54,
                             fontFamily: 'PixelifySans',
-                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
                   )
                 else
-                  ...List.generate(saves.length, (index) {
-                    final save = saves[index];
+                  ...saves.map((doc) {
+                    final data = doc.data();
+                    final id = doc.id;
 
                     return Container(
                       margin: EdgeInsets.only(bottom: 10),
@@ -382,33 +373,29 @@ class _TelaInicialState extends State<TelaInicial> {
                       ),
                       child: Row(
                         children: [
-                          // 👤 PERSONAGEM
                           Image.asset(
-                            save['personagem'],
+                            data['personagem'],
                             width: 40,
                           ),
 
                           SizedBox(width: 10),
 
-                          // 📛 NOME DO SAVE + PERSONAGEM
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  save['nome'] ?? 'Save sem nome',
+                                  data['nome'] ?? 'Sem nome',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontFamily: 'PixelifySans',
-                                    fontSize: 14,
                                   ),
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  'Personagem: ${save["nomePersonagem"] ?? save["nome"] ?? "Jogador"}',
+                                  'Personagem: ${data["nomePersonagem"]}',
                                   style: TextStyle(
                                     color: Colors.cyanAccent,
-                                    fontFamily: 'PixelifySans',
                                     fontSize: 10,
                                   ),
                                 ),
@@ -423,14 +410,14 @@ class _TelaInicialState extends State<TelaInicial> {
                             onTap: () async {
                               Navigator.pop(context);
 
-                              PlayerData.carregarDeSave(save);
+                              PlayerData.carregarDeSave(data);
 
                               await _player.stop();
 
                               Navigator.pushNamed(
                                 this.context,
-                                save['fase'],
-                                arguments: save,
+                                data['fase'] ?? '/mapa',
+                                arguments: data,
                               );
                             },
                           ),
@@ -441,7 +428,7 @@ class _TelaInicialState extends State<TelaInicial> {
                             cor: Colors.greenAccent,
                             onTap: () {
                               Navigator.pop(context);
-                              _editarSave(index, save);
+                              _editarSaveFirebase(id, data);
                             },
                           ),
 
@@ -450,7 +437,7 @@ class _TelaInicialState extends State<TelaInicial> {
                             icon: Icons.delete,
                             cor: Colors.cyanAccent,
                             onTap: () {
-                              _confirmarDeletarSave(index);
+                              _confirmarDeletarSaveFirebase(id);
                             },
                           ),
                         ],
@@ -473,26 +460,17 @@ class _TelaInicialState extends State<TelaInicial> {
     );
   }
 
-  Future<void> _deletarSave(int index) async {
-    final prefs = await SharedPreferences.getInstance();
-    final dados = prefs.getString('saves');
-
-    if (dados == null) return;
-
-    List saves = jsonDecode(dados);
-
-    saves.removeAt(index);
-
-    await prefs.setString('saves', jsonEncode(saves));
+  Future<void> _deletarSaveFirebase(String id) async {
+    await FirebaseFirestore.instance.collection('saves').doc(id).delete();
 
     Navigator.of(context).pop();
 
     await Future.delayed(Duration(milliseconds: 100));
 
-    _mostrarSaves(context);
+    _mostrarSavesFirebase(context);
   }
 
-  Future<void> _confirmarDeletarSave(int index) async {
+  Future<void> _confirmarDeletarSaveFirebase(String id) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -525,10 +503,7 @@ class _TelaInicialState extends State<TelaInicial> {
                   children: [
                     // ❌ CANCELAR
                     GestureDetector(
-                      onTap: () {
-                        print("CANCELAR CLICADO");
-                        Navigator.pop(dialogContext, false);
-                      },
+                      onTap: () => Navigator.pop(dialogContext, false),
                       child: _buildBotaoPixel(
                         "CANCELAR",
                         () => Navigator.pop(dialogContext, false),
@@ -566,11 +541,11 @@ class _TelaInicialState extends State<TelaInicial> {
     );
 
     if (confirmar == true) {
-      await _deletarSave(index);
+      await _deletarSaveFirebase(id);
     }
   }
 
-  Future<void> _editarSave(int index, Map save) async {
+  Future<void> _editarSaveFirebase(String id, Map save) async {
     TextEditingController controller =
         TextEditingController(text: save['nome']);
 
@@ -604,18 +579,14 @@ class _TelaInicialState extends State<TelaInicial> {
       },
     );
 
-    if (novoNome == null) return;
+    if (novoNome == null || novoNome.trim().isEmpty) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final dados = prefs.getString('saves');
+    await FirebaseFirestore.instance
+        .collection('saves')
+        .doc(id)
+        .update({'nome': novoNome.trim()});
 
-    List saves = jsonDecode(dados!);
-
-    saves[index]['nome'] = novoNome;
-
-    await prefs.setString('saves', jsonEncode(saves));
-
-    _mostrarSaves(context);
+    _mostrarSavesFirebase(context);
   }
 
   // Mini tela exibida quando o jogador tenta abrir a biblioteca antes de passar pelo H15.
@@ -773,7 +744,7 @@ class _TelaInicialState extends State<TelaInicial> {
                 }, false),
                 SizedBox(height: 20),
                 _buildBotaoPixel("CONTINUAR", () {
-                  _mostrarSaves(context);
+                  _mostrarSavesFirebase(context);
                 }, false),
                 SizedBox(height: 15),
                 _buildBotaoPixel("CRÉDITOS", () {

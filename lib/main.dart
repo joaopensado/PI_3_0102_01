@@ -1,14 +1,7 @@
-// -----------------------------------------------------------------------------
-// Arquivo de rotas principais do app. A rota /mapa_biblioteca leva para a tela
-// de geolocalização criada para acessar a biblioteca.
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-// ARQUIVO: main.dart
-// COMENTÁRIO SOBRE ROTAS DA BIBLIOTECA:
-// A rota /biblioteca abre a primeira tela do ambiente da biblioteca.
-// A rota /mapa_biblioteca abre o mapa/geolocalização antes da entrada.
-// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'tela_inicial.dart';
 import 'tela_h15.dart';
 import 'arquiteturaOUT.dart';
@@ -18,7 +11,13 @@ import 'entradaManacas.dart';
 import 'pracaalimentacao.dart';
 import 'biblioteca_fachada.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(MyApp());
 }
 
