@@ -1,19 +1,8 @@
-// -----------------------------------------------------------------------------
-// Ambiente H15/Pingo. Foi ajustado para liberar a biblioteca no progresso global
-// e enviar o jogador para o mapa de geolocalização da biblioteca.
-// -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-// -----------------------------------------------------------------------------
-// ARQUIVO: tela_h15.dart
-// COMENTÁRIOS DAS ALTERAÇÕES NA H15:
-// - Ao terminar a etapa do Pingo/H15, a biblioteca é desbloqueada.
-// - O botão que antes ia direto para a biblioteca agora pode abrir o mapa da biblioteca.
-// - A geolocalização continua sendo usada para o ambiente H15.
-// -----------------------------------------------------------------------------
 import 'dart:html' as html;
 import 'game_progress.dart';
 
@@ -26,30 +15,30 @@ class _TelaH15State extends State<TelaH15> {
   late VideoPlayerController _videoController;
   late VideoPlayerController _videoEsperaController;
   late AudioPlayer _musicPlayer;
-  
+
   bool _videoInicializado = false;
   bool _videoEsperaInicializado = false;
   bool _audioInicializado = false;
   bool _usandoVideoEspera = false;
-  
+
   String _textoExibido = '';
   String _textoCompleto = '';
   int _indiceChar = 0;
   bool _digitando = false;
-  
+
   int etapaDialogo = 0;
   bool missaoAceita = false;
   bool dialogoFinalizado = false;
   String opcaoEscolhida = '';
-  
+
   bool _mapaAberto = false;
 
   MapController _mapController = MapController();
 
-double _userLat = -22.834084781581872;
-double _userLng = -47.052650679667536;
+  double _userLat = -22.834084781581872;
+  double _userLng = -47.052650679667536;
 
-final LatLng _h15 = LatLng(-22.834084781581872, -47.052650679667536);
+  final LatLng _h15 = LatLng(-22.834084781581872, -47.052650679667536);
 
   @override
   void initState() {
@@ -59,32 +48,34 @@ final LatLng _h15 = LatLng(-22.834084781581872, -47.052650679667536);
   }
 
   void _inicializarVideos() async {
-    _videoController = VideoPlayerController.asset('assets/videos/videoPingo.mp4');
+    _videoController =
+        VideoPlayerController.asset('assets/videos/videoPingo.mp4');
     await _videoController.initialize();
     _videoController.setLooping(true);
-    
-    _videoEsperaController = VideoPlayerController.asset('assets/videos/videoPingoEsperando.mp4');
+
+    _videoEsperaController =
+        VideoPlayerController.asset('assets/videos/videoPingoEsperando.mp4');
     await _videoEsperaController.initialize();
     _videoEsperaController.setLooping(true);
-    
+
     setState(() {
       _videoInicializado = true;
       _videoEsperaInicializado = true;
     });
-    
+
     _mostrarVideoEspera();
   }
 
   void _inicializarAudios() async {
     try {
       _musicPlayer = AudioPlayer();
-      
+
       await _musicPlayer.play(AssetSource('audio/musicaPingo.mp3'));
       await _musicPlayer.setVolume(0.5);
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-      
+
       await _musicPlayer.resume();
-      
+
       print('✅ Áudios carregados com sucesso!');
       setState(() {
         _audioInicializado = true;
@@ -117,28 +108,27 @@ final LatLng _h15 = LatLng(-22.834084781581872, -47.052650679667536);
 
   void _iniciarDigitacao(String novoTexto) {
     _mostrarVideoFalando();
-    
+
     setState(() {
       _textoCompleto = novoTexto;
       _textoExibido = '';
       _indiceChar = 0;
       _digitando = true;
     });
-    
+
     _proximoCaractere();
   }
 
   void _proximoCaractere() {
     if (_indiceChar < _textoCompleto.length) {
-      if (_textoCompleto[_indiceChar] != ' ' && 
-          _textoCompleto[_indiceChar] != '\n') {
-      }
-      
+      if (_textoCompleto[_indiceChar] != ' ' &&
+          _textoCompleto[_indiceChar] != '\n') {}
+
       setState(() {
         _textoExibido += _textoCompleto[_indiceChar];
         _indiceChar++;
       });
-      
+
       Future.delayed(Duration(milliseconds: 35), () {
         if (mounted) _proximoCaractere();
       });
@@ -188,176 +178,172 @@ final LatLng _h15 = LatLng(-22.834084781581872, -47.052650679667536);
   }
 
   double _calcularDistancia() {
-  return Distance().as(
-    LengthUnit.Meter,
-    LatLng(_userLat, _userLng),
-    _h15,
-  );
-}
+    return Distance().as(
+      LengthUnit.Meter,
+      LatLng(_userLat, _userLng),
+      _h15,
+    );
+  }
 
 // ================= GEO LOCALIZAÇÃO =================
-Future<void> _pegarLocalizacao() async {
-  try {
-    final geo = html.window.navigator.geolocation;
+  Future<void> _pegarLocalizacao() async {
+    try {
+      final geo = html.window.navigator.geolocation;
 
-    if (geo == null) return;
+      if (geo == null) return;
 
-    final pos = await geo.getCurrentPosition(
-      enableHighAccuracy: true,
-      timeout: Duration(milliseconds: 10000),
+      final pos = await geo.getCurrentPosition(
+        enableHighAccuracy: true,
+        timeout: Duration(milliseconds: 10000),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _userLat = pos.coords?.latitude?.toDouble() ?? _userLat;
+        _userLng = pos.coords?.longitude?.toDouble() ?? _userLng;
+      });
+    } catch (e) {
+      print('❌ ERRO GEO: $e');
+    }
+  }
+
+  Future<void> _abrirMapa() async {
+    if (_mapaAberto) return;
+    _mapaAberto = true;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Obtendo localização...')),
     );
+
+    await _pegarLocalizacao();
 
     if (!mounted) return;
 
-    setState(() {
-      _userLat = pos.coords?.latitude?.toDouble() ?? _userLat;
-      _userLng = pos.coords?.longitude?.toDouble() ?? _userLng;
-    });
+    showDialog(
+      context: context,
+      builder: (context) {
+        final MapController controller = MapController();
 
-  } catch (e) {
-    print('❌ ERRO GEO: $e');
-  }
-}
-
-Future<void> _abrirMapa() async {
-  if (_mapaAberto) return;
-  _mapaAberto = true;
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Obtendo localização...')),
-  );
-
-  await _pegarLocalizacao();
-
-  if (!mounted) return;
-
-  showDialog(
-    context: context,
-    builder: (context) {
-
-      final MapController controller = MapController();
-
-      return Dialog(
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: Colors.cyanAccent, width: 2),
-        ),
-        child: Container(
-          height: 500,
-          width: 350,
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: [
-              Text(
-                'MAPA - SUA LOCALIZAÇÃO',
-                style: TextStyle(
-                  fontFamily: 'PixelifySans',
-                  color: Colors.cyanAccent,
-                ),
-              ),
-
-              SizedBox(height: 10),
-
-              Expanded(
-                child: FlutterMap(
-                  mapController: controller,
-                  options: MapOptions(
-                    initialCenter: LatLng(_userLat, _userLng),
-                    initialZoom: 17,
-
-                    onMapReady: () {
-                      controller.move(
-                        LatLng(_userLat, _userLng),
-                        17,
-                      );
-                    },
+        return Dialog(
+          backgroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: Colors.cyanAccent, width: 2),
+          ),
+          child: Container(
+            height: 500,
+            width: 350,
+            padding: EdgeInsets.all(10),
+            child: Column(
+              children: [
+                Text(
+                  'MAPA - SUA LOCALIZAÇÃO',
+                  style: TextStyle(
+                    fontFamily: 'PixelifySans',
+                    color: Colors.cyanAccent,
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.app',
+                ),
+
+                SizedBox(height: 10),
+
+                Expanded(
+                  child: FlutterMap(
+                    mapController: controller,
+                    options: MapOptions(
+                      initialCenter: LatLng(_userLat, _userLng),
+                      initialZoom: 17,
+                      onMapReady: () {
+                        controller.move(
+                          LatLng(_userLat, _userLng),
+                          17,
+                        );
+                      },
                     ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.app',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: LatLng(_userLat, _userLng),
+                            width: 40,
+                            height: 40,
+                            child: Icon(Icons.location_pin,
+                                color: Colors.red, size: 40),
+                          ),
+                          Marker(
+                            point: _h15,
+                            width: 40,
+                            height: 40,
+                            child: Icon(Icons.location_on,
+                                color: Colors.cyanAccent, size: 30),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
 
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: LatLng(_userLat, _userLng),
-                          width: 40,
-                          height: 40,
-                          child: Icon(Icons.location_pin, color: Colors.red, size: 40),
-                        ),
+                SizedBox(height: 10),
 
-                        Marker(
-                          point: _h15,
-                          width: 40,
-                          height: 40,
-                          child: Icon(Icons.location_on, color: Colors.cyanAccent, size: 30),
-                        ),
-                      ],
+                Text(
+                  '📍 VERMELHO: Você | CIANO: H15',
+                  style: TextStyle(fontSize: 10, color: Colors.white54),
+                ),
+
+                SizedBox(height: 10),
+
+                // 🔥 BOTÕES ESTILIZADOS
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        controller.move(
+                          LatLng(_userLat, _userLng),
+                          17,
+                        );
+                      },
+                      child: _botaoPixelMapa('MINHA POSIÇÃO'),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        double d = _calcularDistancia();
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Distância até H15: ${d.toStringAsFixed(0)}m',
+                            ),
+                          ),
+                        );
+                      },
+                      child: _botaoPixelMapa('DISTÂNCIA'),
                     ),
                   ],
                 ),
-              ),
 
-              SizedBox(height: 10),
+                SizedBox(height: 12),
 
-              Text(
-                '📍 VERMELHO: Você | CIANO: H15',
-                style: TextStyle(fontSize: 10, color: Colors.white54),
-              ),
-
-              SizedBox(height: 10),
-
-              // 🔥 BOTÕES ESTILIZADOS
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-
-                  GestureDetector(
-                    onTap: () {
-                      controller.move(
-                        LatLng(_userLat, _userLng),
-                        17,
-                      );
-                    },
-                    child: _botaoPixelMapa('MINHA POSIÇÃO'),
-                  ),
-
-                  GestureDetector(
-                    onTap: () {
-                      double d = _calcularDistancia();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Distância até H15: ${d.toStringAsFixed(0)}m',
-                          ),
-                        ),
-                      );
-                    },
-                    child: _botaoPixelMapa('DISTÂNCIA'),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 12),
-
-              GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: _botaoPixelMapa('FECHAR', cor: Colors.redAccent),
-              ),
-            ],
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: _botaoPixelMapa('FECHAR', cor: Colors.redAccent),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  ).then((_) {
-    _mapaAberto = false;
-  });
-}
+        );
+      },
+    ).then((_) {
+      _mapaAberto = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -401,7 +387,8 @@ Future<void> _abrirMapa() async {
                   children: [
                     Icon(Icons.map, color: Colors.cyanAccent, size: 18),
                     SizedBox(width: 6),
-                    Text('MAPA',
+                    Text(
+                      'MAPA',
                       style: TextStyle(
                         fontFamily: 'PixelifySans',
                         fontSize: 12,
@@ -430,7 +417,9 @@ Future<void> _abrirMapa() async {
                       border: Border.all(color: Colors.cyanAccent, width: 4),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
-                        BoxShadow(color: Colors.cyan.withOpacity(0.4), blurRadius: 20),
+                        BoxShadow(
+                            color: Colors.cyan.withOpacity(0.4),
+                            blurRadius: 20),
                       ],
                     ),
                     child: ClipRRect(
@@ -452,7 +441,8 @@ Future<void> _abrirMapa() async {
                                           width: 300,
                                           height: 300,
                                           child: _usandoVideoEspera
-                                              ? VideoPlayer(_videoEsperaController)
+                                              ? VideoPlayer(
+                                                  _videoEsperaController)
                                               : VideoPlayer(_videoController),
                                         ),
                                       ),
@@ -475,7 +465,8 @@ Future<void> _abrirMapa() async {
                           : Container(
                               color: Color(0xFF0a0e27),
                               child: Center(
-                                child: CircularProgressIndicator(color: Colors.cyanAccent),
+                                child: CircularProgressIndicator(
+                                    color: Colors.cyanAccent),
                               ),
                             ),
                     ),
@@ -489,12 +480,20 @@ Future<void> _abrirMapa() async {
                     border: Border.all(color: Colors.cyanAccent, width: 2),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text('PINGO',
-                    style: TextStyle(fontFamily: 'PixelifySans', fontSize: 20, color: Colors.cyanAccent),
+                  child: Text(
+                    'PINGO',
+                    style: TextStyle(
+                        fontFamily: 'PixelifySans',
+                        fontSize: 20,
+                        color: Colors.cyanAccent),
                   ),
                 ),
-                Text('O Pinguim Tecnológico',
-                  style: TextStyle(fontFamily: 'PixelifySans', fontSize: 11, color: Colors.white70),
+                Text(
+                  'O Pinguim Tecnológico',
+                  style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 11,
+                      color: Colors.white70),
                 ),
               ],
             ),
@@ -528,8 +527,12 @@ Future<void> _abrirMapa() async {
                   children: [
                     Icon(Icons.arrow_back, color: Colors.cyanAccent, size: 18),
                     SizedBox(width: 6),
-                    Text('VOLTAR',
-                      style: TextStyle(fontFamily: 'PixelifySans', fontSize: 12, color: Colors.cyanAccent),
+                    Text(
+                      'VOLTAR',
+                      style: TextStyle(
+                          fontFamily: 'PixelifySans',
+                          fontSize: 12,
+                          color: Colors.cyanAccent),
                     ),
                   ],
                 ),
@@ -542,7 +545,9 @@ Future<void> _abrirMapa() async {
   }
 
   Widget _buildDialogoPixel() {
-    if (_textoAtualCompleto.isNotEmpty && _textoCompleto != _textoAtualCompleto && _textoExibido.isEmpty) {
+    if (_textoAtualCompleto.isNotEmpty &&
+        _textoCompleto != _textoAtualCompleto &&
+        _textoExibido.isEmpty) {
       _iniciarDigitacao(_textoAtualCompleto);
     }
 
@@ -560,7 +565,8 @@ Future<void> _abrirMapa() async {
             bottomRight: Radius.circular(8),
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black87, blurRadius: 15, offset: Offset(6, 6)),
+            BoxShadow(
+                color: Colors.black87, blurRadius: 15, offset: Offset(6, 6)),
           ],
         ),
         child: Column(
@@ -571,13 +577,20 @@ Future<void> _abrirMapa() async {
               children: [
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.cyanAccent, borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(
+                      color: Colors.cyanAccent,
+                      borderRadius: BorderRadius.circular(6)),
                   child: Row(
                     children: [
                       Icon(Icons.chat_bubble, color: Colors.black, size: 16),
                       SizedBox(width: 8),
-                      Text('PINGO',
-                        style: TextStyle(fontFamily: 'PixelifySans', fontWeight: FontWeight.bold, color: Colors.black, fontSize: 14),
+                      Text(
+                        'PINGO',
+                        style: TextStyle(
+                            fontFamily: 'PixelifySans',
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            fontSize: 14),
                       ),
                     ],
                   ),
@@ -586,32 +599,58 @@ Future<void> _abrirMapa() async {
                 if (_digitando)
                   Container(
                     padding: EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: Colors.cyanAccent.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
+                    decoration: BoxDecoration(
+                        color: Colors.cyanAccent.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(6)),
                     child: Row(
                       children: [
-                        SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent)),
+                        SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.cyanAccent)),
                         SizedBox(width: 6),
-                        Text('DIGITANDO...', style: TextStyle(fontFamily: 'PixelifySans', fontSize: 9, color: Colors.cyanAccent)),
+                        Text('DIGITANDO...',
+                            style: TextStyle(
+                                fontFamily: 'PixelifySans',
+                                fontSize: 9,
+                                color: Colors.cyanAccent)),
                       ],
                     ),
                   ),
               ],
             ),
             SizedBox(height: 16),
-            Text(_textoExibido,
-              style: TextStyle(fontFamily: 'PixelifySans', fontSize: 16, color: Colors.white, height: 1.5),
+            Text(
+              _textoExibido,
+              style: TextStyle(
+                  fontFamily: 'PixelifySans',
+                  fontSize: 16,
+                  color: Colors.white,
+                  height: 1.5),
             ),
-            
-            if (!_digitando && (etapaDialogo == 0 || (etapaDialogo == 1 && opcaoEscolhida.isEmpty && !dialogoFinalizado)) && _textoExibido == _textoCompleto)
+            if (!_digitando &&
+                (etapaDialogo == 0 ||
+                    (etapaDialogo == 1 &&
+                        opcaoEscolhida.isEmpty &&
+                        !dialogoFinalizado)) &&
+                _textoExibido == _textoCompleto)
               Padding(
                 padding: EdgeInsets.only(top: 12),
-                child: Text('👆 Toque para continuar...',
-                  style: TextStyle(fontFamily: 'PixelifySans', fontSize: 11, color: Colors.cyanAccent.withOpacity(0.6)),
+                child: Text(
+                  '👆 Toque para continuar...',
+                  style: TextStyle(
+                      fontFamily: 'PixelifySans',
+                      fontSize: 11,
+                      color: Colors.cyanAccent.withOpacity(0.6)),
                   textAlign: TextAlign.center,
                 ),
               ),
-            
-            if (!_digitando && etapaDialogo == 1 && opcaoEscolhida.isEmpty && !dialogoFinalizado && _textoExibido == _textoCompleto)
+            if (!_digitando &&
+                etapaDialogo == 1 &&
+                opcaoEscolhida.isEmpty &&
+                !dialogoFinalizado &&
+                _textoExibido == _textoCompleto)
               Column(
                 children: [
                   SizedBox(height: 16),
@@ -631,8 +670,11 @@ Future<void> _abrirMapa() async {
                   }),
                 ],
               ),
-
-            if (!_digitando && etapaDialogo == 1 && opcaoEscolhida == 'complicado' && !missaoAceita && _textoExibido == _textoCompleto)
+            if (!_digitando &&
+                etapaDialogo == 1 &&
+                opcaoEscolhida == 'complicado' &&
+                !missaoAceita &&
+                _textoExibido == _textoCompleto)
               Column(
                 children: [
                   SizedBox(height: 16),
@@ -645,8 +687,9 @@ Future<void> _abrirMapa() async {
                   }),
                 ],
               ),
-
-            if (!_digitando && dialogoFinalizado && _textoExibido == _textoCompleto)
+            if (!_digitando &&
+                dialogoFinalizado &&
+                _textoExibido == _textoCompleto)
               Column(
                 children: [
                   SizedBox(height: 16),
@@ -659,11 +702,16 @@ Future<void> _abrirMapa() async {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                        Icon(Icons.check_circle,
+                            color: Colors.greenAccent, size: 20),
                         SizedBox(width: 10),
                         Expanded(
-                          child: Text('✓ Missão: "Em Busca de Capivarilda" iniciada!',
-                            style: TextStyle(fontFamily: 'PixelifySans', color: Colors.greenAccent, fontSize: 12),
+                          child: Text(
+                            '✓ Missão: "Em Busca de Capivarilda" iniciada!',
+                            style: TextStyle(
+                                fontFamily: 'PixelifySans',
+                                color: Colors.greenAccent,
+                                fontSize: 12),
                           ),
                         ),
                       ],
@@ -684,7 +732,9 @@ Future<void> _abrirMapa() async {
                       }),
                       _buildBotaoAcao('EXPLORAR H15', () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Explore o H15!'), backgroundColor: Colors.cyan),
+                          SnackBar(
+                              content: Text('Explore o H15!'),
+                              backgroundColor: Colors.cyan),
                         );
                       }),
                     ],
@@ -708,8 +758,12 @@ Future<void> _abrirMapa() async {
           border: Border.all(color: Colors.cyanAccent, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(texto,
-          style: TextStyle(fontFamily: 'PixelifySans', fontSize: 13, color: Colors.cyanAccent),
+        child: Text(
+          texto,
+          style: TextStyle(
+              fontFamily: 'PixelifySans',
+              fontSize: 13,
+              color: Colors.cyanAccent),
           textAlign: TextAlign.center,
         ),
       ),
@@ -722,43 +776,57 @@ Future<void> _abrirMapa() async {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [Color(0xFF2a2f4a), Color(0xFF1a1f3a)]),
+          gradient:
+              LinearGradient(colors: [Color(0xFF2a2f4a), Color(0xFF1a1f3a)]),
           border: Border.all(color: Colors.cyanAccent, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(texto,
-          style: TextStyle(fontFamily: 'PixelifySans', fontSize: 11, color: Colors.cyanAccent),
+        child: Text(
+          texto,
+          style: TextStyle(
+              fontFamily: 'PixelifySans',
+              fontSize: 11,
+              color: Colors.cyanAccent),
         ),
       ),
     );
   }
 
   Widget _botaoPixelMapa(String texto, {Color cor = Colors.cyanAccent}) {
-  return Container(
-    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-    decoration: BoxDecoration(
-      color: Color(0xFF1a1f3a),
-      border: Border.all(color: cor, width: 2),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Text(
-      texto,
-      style: TextStyle(
-        fontFamily: 'PixelifySans',
-        fontSize: 10,
-        color: cor,
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Color(0xFF1a1f3a),
+        border: Border.all(color: cor, width: 2),
+        borderRadius: BorderRadius.circular(8),
       ),
-    ),
-  );
-}
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontFamily: 'PixelifySans',
+          fontSize: 10,
+          color: cor,
+        ),
+      ),
+    );
+  }
 
   List<Widget> _buildPixelDecorations() {
     List<Widget> decos = [];
-    final codigos = ['01001000 00110001 00110101', '01110000 01111001 01110100', '01101000 01101111 01101110'];
+    final codigos = [
+      '01001000 00110001 00110101',
+      '01110000 01111001 01110100',
+      '01101000 01101111 01101110'
+    ];
     for (int i = 0; i < codigos.length; i++) {
       decos.add(Positioned(
-        top: 30 + (i * 40), right: 10,
-        child: Text(codigos[i], style: TextStyle(fontFamily: 'PixelifySans', fontSize: 10, color: Colors.cyanAccent.withOpacity(0.2))),
+        top: 30 + (i * 40),
+        right: 10,
+        child: Text(codigos[i],
+            style: TextStyle(
+                fontFamily: 'PixelifySans',
+                fontSize: 10,
+                color: Colors.cyanAccent.withOpacity(0.2))),
       ));
     }
     return decos;
