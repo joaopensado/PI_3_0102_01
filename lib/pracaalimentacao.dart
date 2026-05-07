@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'minigame_pracaalimentacao.dart';
 
 class Telapracaalimentacao extends StatefulWidget {
   const Telapracaalimentacao({super.key});
@@ -26,12 +27,14 @@ class _TelapracaalimentacaoState
   Future<void> tocarAudio() async {
     await _player.setVolume(1.0);
     await _player.setReleaseMode(ReleaseMode.loop);
+
     await _player.play(
       AssetSource('audio/sompraca.mp3'),
     );
   }
 
   void alternarMute() async {
+
     setState(() {
       mutado = !mutado;
     });
@@ -50,11 +53,12 @@ class _TelapracaalimentacaoState
   }
 
   String get textoAtual {
+
     switch (etapa) {
 
       // NPC
       case 0:
-        return '\n Olá criatura feia, em que posso te ajudar?';
+        return '\nOlá criatura feia, em que posso te ajudar?';
 
       // JOGADOR
       case 1:
@@ -62,7 +66,7 @@ class _TelapracaalimentacaoState
 
       // NPC
       case 2:
-        return '\n Ah sim, tenho uma informação útil... mas só direi se completar um desafio!';
+        return '\nAh sim, tenho uma informação útil... mas só direi se completar um desafio!';
 
       // JOGADOR
       case 3:
@@ -70,7 +74,7 @@ class _TelapracaalimentacaoState
 
       // NPC
       case 4:
-        return '\n Você terá que fazer três hambúrgueres corretamente seguindo os pedidos!';
+        return '\nVocê terá que fazer três hambúrgueres corretamente seguindo os pedidos!';
 
       // JOGADOR
       case 5:
@@ -78,7 +82,7 @@ class _TelapracaalimentacaoState
 
       // NPC
       case 6:
-        return '\n Muito bem! O animal desaparecido foi visto com um hambúrguer, ele pediu um para ele e outro para seu amigo coala...';
+        return '\nMuito bem! O animal desaparecido foi visto com um hambúrguer, ele pediu um para ele e outro para seu amigo coala...';
 
       // JOGADOR
       case 7:
@@ -86,7 +90,7 @@ class _TelapracaalimentacaoState
 
       // NPC
       case 8:
-        return '\n Ele é muito bom em desenhos e prédios, acho que ele quer ser arquiteto.';
+        return '\nEle é muito bom em desenhos e prédios, acho que ele quer ser arquiteto.';
 
       // JOGADOR
       case 9:
@@ -94,7 +98,7 @@ class _TelapracaalimentacaoState
 
       // NPC
       case 10:
-        return '\n Boa sorte!';
+        return '\nBoa sorte!';
 
       default:
         return '';
@@ -102,9 +106,9 @@ class _TelapracaalimentacaoState
   }
 
   void avancar() {
+
     setState(() {
 
-      // impede avançar nas escolhas
       if (
       etapa == 1 ||
           etapa == 3 ||
@@ -124,15 +128,18 @@ class _TelapracaalimentacaoState
 
     // PRIMEIRA ESCOLHA
     if (etapa == 1) {
+
       return Column(
         children: [
 
           _botaoPixel(
             'Estou a procura de um animal desaparecido no Campus, ele está com você?',
                 () {
+
               setState(() {
                 etapa = 2;
               });
+
             },
           ),
 
@@ -142,13 +149,29 @@ class _TelapracaalimentacaoState
 
     // SEGUNDA ESCOLHA
     if (etapa == 3) {
+
       return Column(
         children: [
 
           _botaoPixel(
             'Vamos nessa!',
-                () {
-              print("Iniciar minigame direto");
+                () async {
+
+              final venceu = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                  const MinigamePracaAlimentacao(),
+                ),
+              );
+
+              if (venceu == true) {
+
+                setState(() {
+                  etapa = 6;
+                });
+
+              }
             },
           ),
 
@@ -157,9 +180,11 @@ class _TelapracaalimentacaoState
           _botaoPixel(
             'Como é este desafio?',
                 () {
+
               setState(() {
                 etapa = 4;
               });
+
             },
           ),
         ],
@@ -168,38 +193,57 @@ class _TelapracaalimentacaoState
 
     // TERCEIRA ESCOLHA
     if (etapa == 5) {
+
       return _botaoPixel(
         'Vamos nessa',
-            () {
-          setState(() {
-            etapa = 6;
-          });
+            () async {
+
+          final venceu = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+              const MinigamePracaAlimentacao(),
+            ),
+          );
+
+          if (venceu == true) {
+
+            setState(() {
+              etapa = 6;
+            });
+
+          }
         },
       );
     }
 
     // QUARTA ESCOLHA
     if (etapa == 7) {
+
       return Column(
         children: [
 
           _botaoPixel(
             'Onde encontro o Coala?',
                 () {
+
               setState(() {
                 etapa = 8;
               });
+
             },
           ),
 
           SizedBox(height: 10),
 
           _botaoPixel(
-            'Vou em busca do Koala!',
+            'Vou em busca do coala!',
                 () {
+
               setState(() {
                 etapa = 10;
               });
+
             },
           ),
         ],
@@ -208,15 +252,18 @@ class _TelapracaalimentacaoState
 
     // QUINTA ESCOLHA
     if (etapa == 9) {
+
       return Column(
         children: [
 
           _botaoPixel(
             'Obrigada pela ajuda!',
                 () {
+
               setState(() {
                 etapa = 10;
               });
+
             },
           ),
 
@@ -231,11 +278,16 @@ class _TelapracaalimentacaoState
       String texto,
       VoidCallback onTap,
       ) {
+
     return GestureDetector(
       onTap: onTap,
+
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 12),
+
+        padding: EdgeInsets.symmetric(
+          vertical: 12,
+        ),
 
         decoration: BoxDecoration(
           color: Color(0xFF1a1f3a),
@@ -250,7 +302,8 @@ class _TelapracaalimentacaoState
             width: 2,
           ),
 
-          borderRadius: BorderRadius.circular(8),
+          borderRadius:
+          BorderRadius.circular(8),
         ),
 
         child: Text(
@@ -270,20 +323,25 @@ class _TelapracaalimentacaoState
 
     // BOTÃO FINAL
     if (etapa == 10) {
+
       return Align(
         alignment: Alignment.bottomRight,
 
         child: ElevatedButton(
           onPressed: () {
 
-            // futuramente vai pro mapa
             print("Voltar ao mapa");
 
           },
 
           style: ElevatedButton.styleFrom(
             backgroundColor:
-            Color.fromARGB(255, 114, 28, 28),
+            Color.fromARGB(
+              255,
+              114,
+              28,
+              28,
+            ),
 
             side: BorderSide(
               color: const Color.fromARGB(
@@ -314,7 +372,7 @@ class _TelapracaalimentacaoState
       );
     }
 
-    // não mostra continuar nas escolhas
+    // NÃO MOSTRA CONTINUAR NAS ESCOLHAS
     if (
     etapa == 1 ||
         etapa == 3 ||
@@ -333,7 +391,12 @@ class _TelapracaalimentacaoState
 
         style: ElevatedButton.styleFrom(
           backgroundColor:
-          Color.fromARGB(255, 114, 28, 28),
+          Color.fromARGB(
+            255,
+            114,
+            28,
+            28,
+          ),
 
           side: BorderSide(
             color: const Color.fromARGB(
@@ -365,6 +428,7 @@ class _TelapracaalimentacaoState
   }
 
   Widget buildDialogo() {
+
     return Container(
       padding: EdgeInsets.all(20),
 
@@ -386,9 +450,11 @@ class _TelapracaalimentacaoState
           width: 3,
         ),
 
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+        BorderRadius.circular(16),
 
         boxShadow: [
+
           BoxShadow(
             color: const Color.fromARGB(
               221,
@@ -396,9 +462,12 @@ class _TelapracaalimentacaoState
               0,
               0,
             ),
+
             blurRadius: 15,
+
             offset: Offset(6, 6),
           ),
+
         ],
       ),
 
@@ -459,6 +528,7 @@ class _TelapracaalimentacaoState
           SizedBox(height: 12),
 
           buildOpcoes(),
+
           buildBotaoContinuar(),
         ],
       ),
@@ -469,6 +539,7 @@ class _TelapracaalimentacaoState
   Widget build(BuildContext context) {
 
     return Scaffold(
+
       body: Stack(
         children: [
 
@@ -486,6 +557,7 @@ class _TelapracaalimentacaoState
           Positioned(
             left: 0,
             bottom: 90,
+
             child: Image.asset(
               'assets/personagens/ratatoni.png',
               height: 400,
@@ -496,10 +568,11 @@ class _TelapracaalimentacaoState
             right: 20,
             left: 300,
             bottom: 80,
+
             child: buildDialogo(),
           ),
 
-          // 🔙 BOTÃO VOLTAR
+          // BOTÃO VOLTAR
           Positioned(
             top: 40,
             left: 20,
@@ -542,7 +615,7 @@ class _TelapracaalimentacaoState
             ),
           ),
 
-          // 🔊 BOTÃO MUTE
+          // BOTÃO MUTE
           Positioned(
             top: 40,
             right: 20,
